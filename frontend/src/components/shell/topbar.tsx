@@ -79,7 +79,7 @@ export function Topbar({ contagens }: TopbarProps) {
                 variant="ghost"
                 size="icon"
                 onClick={abrir}
-                aria-label="Conheça a Plataforma ASA"
+                aria-label="Conheça a Plataforma do ASA Reboques"
               />
             }
           >

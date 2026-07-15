@@ -72,7 +72,7 @@ const AO_ENTRAR = [
 ];
 
 const TITULOS = [
-  "Bem-vindo à Plataforma ASA",
+  "Bem-vindo à Plataforma do ASA Reboques",
   "O caminho de um atendimento",
   "O sistema trabalha antes de você",
   "Pronto para começar",
@@ -103,7 +103,7 @@ function ConteudoEtapa({ etapa }: { etapa: number }) {
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Uma plataforma feita sob medida para a operação da ASA: o acionamento, a frota e o
+          Uma plataforma feita sob medida para a operação do ASA Reboques: o acionamento, a frota e o
           fechamento do dia, finalmente no mesmo lugar.
         </p>
         <div className="flex flex-col gap-2 rounded-xl border border-border bg-secondary/40 p-4 text-sm font-medium text-foreground">

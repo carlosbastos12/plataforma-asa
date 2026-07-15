@@ -32,8 +32,8 @@ export function AppSidebar({ contagens }: AppSidebarProps) {
             Trabalha junto com o AUTEM
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-60 text-pretty">
-            O AUTEM continua sendo o sistema principal da ASA. Esta plataforma organiza e centraliza a rotina
-            da operação — sem substituir nada.
+            O AUTEM continua sendo o sistema principal do ASA Reboques. Esta plataforma organiza e centraliza a
+            rotina da operação — sem substituir nada.
           </TooltipContent>
         </Tooltip>
       </div>

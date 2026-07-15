@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Central de Operações — Plataforma ASA",
+  title: "Central de Operações — Plataforma do ASA Reboques",
   description: "Plataforma operacional complementar ao AUTEM.",
 };
 
