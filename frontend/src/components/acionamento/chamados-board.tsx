@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Clock, User, MapPin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CHAMADOS_ATIVOS,
   STATUS_CHAMADO_LABEL,
@@ -68,14 +69,24 @@ function ChamadoCard({
           {chamado.motorista} · <span className="font-mono">{chamado.placa}</span>
         </p>
       ) : chamado.status === "aguardando" ? (
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-1 h-8 gap-1.5 self-start text-xs"
-          onClick={() => onDespachar(chamado.id)}
-        >
-          <Send className="size-3.5" /> Despachar motorista
-        </Button>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-1 h-8 gap-1.5 self-start text-xs"
+                onClick={() => onDespachar(chamado.id)}
+              />
+            }
+          >
+            <Send className="size-3.5" /> Despachar motorista
+          </TooltipTrigger>
+          <TooltipContent className="max-w-60 text-pretty">
+            Envia o próximo motorista disponível para este chamado. Quanto antes o despacho, menos tempo o cliente
+            espera na estrada.
+          </TooltipContent>
+        </Tooltip>
       ) : null}
     </motion.div>
   );

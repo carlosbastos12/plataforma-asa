@@ -1,15 +1,10 @@
 import { AppSidebar } from "./app-sidebar";
 import { Topbar } from "./topbar";
 import { PageTransition } from "./page-transition";
-import { contarPendenciasPorSetor } from "@/lib/mock-data";
+import { contagensDaNavegacao } from "@/lib/insights";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const setores = contarPendenciasPorSetor();
-  const contagens: Record<string, number> = {
-    "/acionamento": setores.acionamento,
-    "/gestao-da-frota": setores.gestaoDaFrota,
-    "/fechamento": setores.fechamento,
-  };
+  const contagens = contagensDaNavegacao();
 
   return (
     <div className="flex min-h-screen w-full bg-background">

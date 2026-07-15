@@ -7,8 +7,8 @@ export function BrandMark() {
         <Compass className="size-[18px]" strokeWidth={2.25} />
       </div>
       <div className="leading-tight">
-        <div className="text-sm font-semibold text-sidebar-foreground">Central de Operações</div>
-        <div className="text-[11px] text-sidebar-foreground/55">Plataforma ASA</div>
+        <div className="text-sm font-semibold text-sidebar-foreground">Plataforma ASA</div>
+        <div className="text-[11px] text-sidebar-foreground/55">Central de Operações</div>
       </div>
     </div>
   );

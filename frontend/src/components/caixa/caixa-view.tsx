@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, ArrowDownCircle, ArrowUpCircle, Wallet2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StatCard } from "@/components/home/stat-card";
 import { CAIXA, formatarData, formatarMoeda } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -73,10 +74,18 @@ export function CaixaView() {
               <CheckCircle2 className="size-3.5" /> Fechado
             </span>
           ) : (
-            <Button size="sm" className="gap-1.5" onClick={fecharCaixa} disabled={fechando}>
-              {fechando ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-              {fechando ? "Fechando..." : "Fechar caixa do dia"}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={<Button size="sm" className="gap-1.5" onClick={fecharCaixa} disabled={fechando} />}
+              >
+                {fechando ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                {fechando ? "Fechando..." : "Fechar caixa do dia"}
+              </TooltipTrigger>
+              <TooltipContent className="max-w-60 text-pretty">
+                Confere e trava o saldo do dia. Fechado no mesmo dia, o caixa nunca acumula divergência para o fim do
+                mês.
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 

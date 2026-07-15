@@ -1,14 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Gauge, Hash } from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, User, Gauge, Hash, CircleAlert, CircleCheckBig, Clock3, Wrench } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/status-badge";
+import { Sigla } from "@/components/sigla";
+import { veredictoVeiculo } from "@/lib/insights";
 import {
   FROTA,
   situacaoVeiculo,
@@ -18,6 +14,7 @@ import {
   formatarMoeda,
 } from "@/lib/mock-data";
 import { VehicleTimeline } from "@/components/frota/vehicle-timeline";
+import { cn } from "@/lib/utils";
 
 export function generateStaticParams() {
   return FROTA.map((v) => ({ placa: v.placa }));
@@ -33,6 +30,9 @@ export default async function VeiculoDetalhePage({
   if (!veiculo) notFound();
 
   const status = situacaoVeiculo(veiculo);
+  const veredicto = veredictoVeiculo(veiculo);
+  const critico = veredicto.nivel === "critico";
+  const atencao = veredicto.nivel === "atencao";
 
   return (
     <div className="flex flex-col gap-6">
@@ -69,6 +69,41 @@ export default async function VeiculoDetalhePage({
         <StatusBadge status={status} className="text-sm" />
       </div>
 
+      {/* Veredicto: a primeira coisa que a tela responde é "este veículo pode
+          operar hoje?" — com o motivo e a ação que muda a resposta. */}
+      <div
+        className={cn(
+          "flex items-start gap-3.5 rounded-2xl border p-5",
+          critico
+            ? "border-destructive/25 bg-destructive-soft/50"
+            : atencao
+              ? "border-warning/25 bg-warning-soft/50"
+              : "border-success/25 bg-success-soft/50"
+        )}
+      >
+        <div
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-xl",
+            critico
+              ? "bg-destructive-soft text-destructive"
+              : atencao
+                ? "bg-warning-soft text-warning"
+                : "bg-success-soft text-success"
+          )}
+        >
+          {critico ? (
+            <CircleAlert className="size-5" strokeWidth={2.25} />
+          ) : (
+            <CircleCheckBig className="size-5" strokeWidth={2.25} />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-foreground">{veredicto.titulo}</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{veredicto.motivo}</p>
+          <p className="mt-1.5 text-sm font-medium text-foreground">→ {veredicto.acao}</p>
+        </div>
+      </div>
+
       <Tabs defaultValue="documentacao">
         <TabsList>
           <TabsTrigger value="documentacao">Documentação</TabsTrigger>
@@ -85,7 +120,9 @@ export default async function VeiculoDetalhePage({
               return (
                 <div key={doc.tipo} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">{doc.tipo}</p>
+                    <p className="text-sm font-medium text-foreground">
+                      <Sigla termo={doc.tipo} />
+                    </p>
                     <StatusBadge status={sev} />
                   </div>
                   <p className="mt-1.5 text-[13px] text-muted-foreground">
@@ -103,33 +140,42 @@ export default async function VeiculoDetalhePage({
               Nenhuma multa registrada para este veículo.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Órgão</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {veiculo.multas.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.orgao}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatarData(m.data)}</TableCell>
-                      <TableCell className="font-medium">{formatarMoeda(m.valor)}</TableCell>
-                      <TableCell>
-                        {m.status === "paga" ? (
-                          <StatusBadge status="regular" />
-                        ) : (
-                          <StatusBadge status="critico" />
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <ul className="divide-y divide-border">
+                {veiculo.multas.map((m) => {
+                  const aberta = m.status === "aguardando_indicacao";
+                  const prazo = m.prazoIndicacao ? diasRestantes(m.prazoIndicacao) : null;
+                  return (
+                    <li key={m.id} className="flex items-center gap-4 px-5 py-4">
+                      <div
+                        className={cn(
+                          "flex size-9 shrink-0 items-center justify-center rounded-lg",
+                          aberta ? "bg-destructive-soft text-destructive" : "bg-success-soft text-success"
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      >
+                        {aberta ? <Clock3 className="size-4" strokeWidth={2.25} /> : <CircleCheckBig className="size-4" strokeWidth={2.25} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          <Sigla termo={m.orgao} /> · {formatarData(m.data)}
+                        </p>
+                        <p className="mt-0.5 text-[13px] text-muted-foreground">
+                          {aberta
+                            ? prazo !== null
+                              ? prazo < 0
+                                ? `Prazo de indicação estourado há ${Math.abs(prazo)} dia(s) — resolver evita agravamento.`
+                                : `${prazo} dia(s) para indicar o condutor — dentro do prazo, o valor não dobra.`
+                              : "Aguardando indicação de condutor."
+                            : m.status === "paga"
+                              ? "Paga — nenhuma pendência restante."
+                              : "Condutor indicado — sem risco de agravamento."}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{formatarMoeda(m.valor)}</p>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
         </TabsContent>
@@ -140,29 +186,23 @@ export default async function VeiculoDetalhePage({
               Nenhuma manutenção registrada para este veículo.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>KM</TableHead>
-                    <TableHead>Serviço</TableHead>
-                    <TableHead>Oficina</TableHead>
-                    <TableHead>Valor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {veiculo.manutencoes.map((m, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="text-muted-foreground">{formatarData(m.data)}</TableCell>
-                      <TableCell>{m.km.toLocaleString("pt-BR")} km</TableCell>
-                      <TableCell>{m.servico}</TableCell>
-                      <TableCell>{m.oficina}</TableCell>
-                      <TableCell className="font-medium">{formatarMoeda(m.valor)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <ul className="divide-y divide-border">
+                {veiculo.manutencoes.map((m, i) => (
+                  <li key={i} className="flex items-center gap-4 px-5 py-4">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <Wrench className="size-4" strokeWidth={2.25} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">{m.servico}</p>
+                      <p className="mt-0.5 text-[13px] text-muted-foreground">
+                        {formatarData(m.data)} · {m.km.toLocaleString("pt-BR")} km · {m.oficina}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{formatarMoeda(m.valor)}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </TabsContent>

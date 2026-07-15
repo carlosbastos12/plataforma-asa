@@ -69,3 +69,15 @@ Polimento visual e de acabamento, sem nenhuma funcionalidade nova de negócio:
 - Verificação visual humana antes da apresentação à diretoria — segue sem ferramenta de screenshot disponível nesta sessão; todas as evidências de qualidade são de código (tipos, lint, build, HTTP), não visuais.
 - Confirmar com o CEO se o texto de `LICENSE` (D-025) reflete a intenção real antes de tornar o repositório público.
 - Ver o checklist de publicação entregue ao final desta missão para o passo a passo de GitHub e Vercel.
+
+### Alterado — Missão P027: Redesign da Experiência (2026-07-15)
+Redesign completo da experiência, absorvendo também os ajustes da auditoria de UX P025 que estavam na árvore de trabalho (sidebar clara, faixa de indicadores na home, documentação por urgência):
+- **Cada tela responde uma única pergunta**, exibida como título e alinhada na navegação: home ("Como está a minha operação hoje?"), Acionamento ("Quem precisa da minha atenção agora?"), Veículos ("Quais veículos impedem a operação?"), Documentação ("O que pode interromper a operação?"), Multas ("O que pode gerar prejuízo?"), Fechamento ("O que falta para concluir os fechamentos?") (D-027).
+- **Fim das tabelas nas telas de decisão**: Multas passou da tabela com filtros para os cards de decisão com prazo em contagem regressiva (`MultasCards`); as abas de Multas e Manutenções da ficha do veículo viraram listas com ícone de estado e consequência por linha. `multas-table.tsx`, `documentacao-table.tsx` e o primitivo `ui/table.tsx` foram removidos — zero `<table>` no produto.
+- **Veredicto operacional em toda a frota**: os cards de veículo agora mostram o veredicto ("pode operar hoje?") com motivo e próxima ação; a grade ordena impedidos primeiro; a ficha do veículo abre com um banner de veredicto no padrão estado → consequência → ação.
+- **Fechamento virou checklist**: o hub lista cada caixa com estado, saldo e a ação que conclui ("Conferir e fechar"), respondendo o que falta em vez de só apresentar áreas.
+- **Acionamento prioriza a fila**: o cabeçalho diz quantos clientes esperam e desde quando (o mais antigo primeiro); o botão "Despachar motorista" explica em tooltip o que faz e o que evita.
+- **Toda ação explica seu propósito**: tooltips de propósito também em "Fechar caixa do dia" e nos indicadores da home (como cada número é calculado).
+- **Navegação mais leve**: grupo "Setores" rotulado na sidebar, mais respiro entre itens, badges de pendência com explicação no hover.
+- Linguagem revisada para benefício em títulos e subtítulos de todas as telas.
+- Sem commit nesta missão (publicação tratada na Missão P028).

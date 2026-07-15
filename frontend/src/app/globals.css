@@ -100,14 +100,16 @@
   --chart-4: #8A9A6B;
   --chart-5: #6B5B95;
   --radius: 0.75rem;
-  --sidebar: #101B19;
-  --sidebar-foreground: #DCE6E3;
-  --sidebar-primary: #1D8A78;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #172624;
-  --sidebar-accent-foreground: #DCE6E3;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #1D8A78;
+  /* Sidebar clara: a moldura fica quieta, o conteúdo fala mais alto.
+     (O bloco escuro anterior era o elemento mais pesado da tela — P025.) */
+  --sidebar: #FBFCFC;
+  --sidebar-foreground: #10181A;
+  --sidebar-primary: #0E5E52;
+  --sidebar-primary-foreground: #F3FBF9;
+  --sidebar-accent: #EBF0EE;
+  --sidebar-accent-foreground: #12201D;
+  --sidebar-border: #E1E7E4;
+  --sidebar-ring: #0E5E52;
 }
 
 .dark {

@@ -11,7 +11,7 @@ export default function GestaoDaFrotaPage() {
       <div>
         <h2 className="text-base font-semibold text-foreground">A frota que mantém a operação rodando</h2>
         <p className="text-sm text-muted-foreground">
-          Veículos, documentação e multas — hoje espalhados em planilha, agora num só setor.
+          Veículos, documentação e multas reunidos num só setor.
         </p>
       </div>
 

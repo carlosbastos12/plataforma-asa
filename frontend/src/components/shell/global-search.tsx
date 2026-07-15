@@ -28,12 +28,27 @@ export function GlobalSearch() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), query.trim() ? ATRASO_SIMULADO_MS : 0);
     return () => clearTimeout(t);
   }, [query]);
+
+  // Atalho "/" foca a busca de qualquer lugar — padrão de produto rápido.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const alvo = e.target as HTMLElement | null;
+      const digitando = alvo?.tagName === "INPUT" || alvo?.tagName === "TEXTAREA" || alvo?.isContentEditable;
+      if (e.key === "/" && !digitando) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const buscando = query.trim() !== "" && debouncedQuery !== query;
 
@@ -83,6 +98,7 @@ export function GlobalSearch() {
     <div ref={containerRef} className="relative hidden w-full max-w-xs md:block">
       <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <input
+        ref={inputRef}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -90,8 +106,11 @@ export function GlobalSearch() {
         }}
         onFocus={() => setOpen(true)}
         placeholder="Buscar placa, motorista ou chamado..."
-        className="h-9 w-full rounded-lg border border-border bg-secondary/40 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:bg-card focus:outline-none"
+        className="h-9 w-full rounded-lg border border-border bg-secondary/40 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:bg-card focus:outline-none"
       />
+      <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-card px-1.5 font-mono text-[11px] text-muted-foreground lg:block">
+        /
+      </kbd>
 
       <AnimatePresence>
         {open && query.trim() && (

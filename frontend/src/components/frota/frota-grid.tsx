@@ -21,13 +21,16 @@ export function FrotaGrid() {
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
+    // Quem impede a operação aparece primeiro — a tela responde a pergunta
+    // antes de qualquer filtro ser tocado.
+    const peso: Record<string, number> = { critico: 0, atencao: 1, regular: 2 };
     return FROTA.filter((v) => {
       const bateBusca =
         !termo || v.placa.toLowerCase().includes(termo) || v.motorista.toLowerCase().includes(termo);
       const bateCategoria = categoria === "todas" || v.categoria === categoria;
       const bateStatus = status === "todos" || situacaoVeiculo(v) === status;
       return bateBusca && bateCategoria && bateStatus;
-    });
+    }).sort((a, b) => peso[situacaoVeiculo(a)] - peso[situacaoVeiculo(b)]);
   }, [busca, categoria, status]);
 
   return (

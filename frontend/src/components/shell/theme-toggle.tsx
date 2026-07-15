@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -15,16 +16,24 @@ export function ThemeToggle() {
   }
 
   const escuro = resolvedTheme === "dark";
+  const rotulo = escuro ? "Mudar para o tema claro" : "Mudar para o tema escuro";
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(escuro ? "light" : "dark")}
-      aria-label={escuro ? "Mudar para tema claro" : "Mudar para tema escuro"}
-      className="text-muted-foreground"
-    >
-      {escuro ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(escuro ? "light" : "dark")}
+            aria-label={rotulo}
+            className="text-muted-foreground"
+          />
+        }
+      >
+        {escuro ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{rotulo}</TooltipContent>
+    </Tooltip>
   );
 }

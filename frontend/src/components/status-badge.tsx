@@ -19,7 +19,16 @@ const CONFIG: Record<DocStatus, { label: string; className: string; dot: string 
   },
 };
 
-export function StatusBadge({ status, className }: { status: DocStatus; className?: string }) {
+export function StatusBadge({
+  status,
+  label,
+  className,
+}: {
+  status: DocStatus;
+  /** Rótulo específico do contexto (ex.: "Paga" para multa quitada) — evita reusar "Em dia" fora de documentação. */
+  label?: string;
+  className?: string;
+}) {
   const c = CONFIG[status];
   return (
     <span
@@ -30,7 +39,7 @@ export function StatusBadge({ status, className }: { status: DocStatus; classNam
       )}
     >
       <span className={cn("size-1.5 rounded-full", c.dot)} />
-      {c.label}
+      {label ?? c.label}
     </span>
   );
 }

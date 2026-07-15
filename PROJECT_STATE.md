@@ -4,7 +4,7 @@
 
 ## Fase atual
 
-**Missão 03 — Preparação para Apresentação — entregue.** Polimento de acabamento (estados vazios, ações com resposta real, busca com carregamento simulado) e preparação para publicação (LICENSE, `.env.example`, READMEs), sem nenhuma funcionalidade nova de negócio. Build de produção verificado com sucesso. Ainda sem backend, banco, autenticação ou integração.
+**Missão P027 — Redesign da Experiência — entregue.** Cada tela agora responde uma única pergunta (D-027); tabelas eliminadas das telas de decisão em favor de cards, checklists e veredictos com próxima ação; toda ação clicável explica seu propósito em tooltip; navegação mais leve. Publicação (GitHub + Vercel) tratada na Missão P028. Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
@@ -59,4 +59,4 @@ Acesse `http://localhost:3000`.
 
 ## Última atualização
 
-2026-07-14 — Missão 03 (Preparação para Apresentação) entregue: polimento de acabamento e build de produção verificado.
+2026-07-15 — Missão P027 (Redesign da Experiência) entregue: uma pergunta por tela, fim das tabelas nas telas de decisão, veredicto operacional na frota, fechamento em checklist e ações com propósito explicado.
