@@ -10,16 +10,18 @@ interface AppSidebarProps {
 
 export function AppSidebar({ contagens }: AppSidebarProps) {
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-      <div className="px-4 pt-6 pb-5">
+    // Sem bloco, sem borda: a navegação flutua sobre o mesmo fundo da página —
+    // a moldura desaparece e sobra conteúdo (P029).
+    <aside className="hidden w-64 shrink-0 flex-col md:flex">
+      <div className="px-6 pt-7 pb-6">
         <BrandMark />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3">
+      <div className="flex-1 overflow-y-auto px-4">
         <SidebarNav contagens={contagens} />
       </div>
 
-      <div className="border-t border-sidebar-border px-4 py-3">
+      <div className="px-6 py-4">
         <Tooltip>
           <TooltipTrigger
             render={

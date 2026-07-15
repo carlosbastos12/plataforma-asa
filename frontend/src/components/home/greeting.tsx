@@ -13,17 +13,27 @@ interface GreetingProps {
   totalAtencao: number;
 }
 
+/**
+ * A home abre com tranquilidade, não com cobrança (P029): primeiro o estado
+ * geral em tom calmo, depois — em segundo plano — quantas decisões esperam.
+ */
 export function Greeting({ totalCriticos, totalAtencao }: GreetingProps) {
   const saudacaoTexto = saudacao(new Date().getHours());
-  const total = totalCriticos + totalAtencao;
 
-  let mensagem: string;
-  if (total === 0) {
-    mensagem = "Nenhuma tarefa aguardando você. Tudo em ordem por aqui.";
-  } else if (total === 1) {
-    mensagem = "Hoje existe 1 tarefa aguardando. Vamos começar?";
+  let titulo: string;
+  let detalhe: string;
+  if (totalCriticos === 0 && totalAtencao === 0) {
+    titulo = "Tudo sob controle por aqui.";
+    detalhe = "Nenhuma pendência esperando por você. Quando algo mudar, você fica sabendo aqui primeiro.";
+  } else if (totalCriticos === 0) {
+    titulo = "A operação está rodando bem.";
+    detalhe = `Nada urgente agora — ${totalAtencao} prazo(s) se aproximando, para acompanhar quando quiser.`;
   } else {
-    mensagem = `Hoje existem ${total} tarefas aguardando. Vamos começar?`;
+    titulo = "A operação segue rodando.";
+    detalhe =
+      totalCriticos === 1
+        ? "1 decisão espera por você hoje — o resto está sob controle."
+        : `${totalCriticos} decisões esperam por você hoje — o resto está sob controle.`;
   }
 
   return (
@@ -36,8 +46,9 @@ export function Greeting({ totalCriticos, totalAtencao }: GreetingProps) {
         {saudacaoTexto}, Carlos.
       </p>
       <h1 className="mt-1.5 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-        {mensagem}
+        {titulo}
       </h1>
+      <p className="mt-2 max-w-xl text-[15px] text-muted-foreground">{detalhe}</p>
     </motion.div>
   );
 }

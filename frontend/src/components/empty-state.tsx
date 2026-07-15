@@ -5,11 +5,13 @@ interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
   description?: string;
+  /** Ação sugerida — um estado vazio nunca é um beco sem saída. */
+  action?: React.ReactNode;
   className?: string;
   compact?: boolean;
 }
 
-export function EmptyState({ icon: Icon, title, description, className, compact }: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action, className, compact }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -25,6 +27,7 @@ export function EmptyState({ icon: Icon, title, description, className, compact 
         <p className="text-sm font-medium text-foreground">{title}</p>
         {description && <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>}
       </div>
+      {action && <div className="mt-1">{action}</div>}
     </div>
   );
 }

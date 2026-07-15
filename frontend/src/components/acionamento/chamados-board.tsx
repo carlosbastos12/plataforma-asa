@@ -121,8 +121,8 @@ export function ChamadosBoard() {
             </div>
             <motion.div layout variants={container} initial="hidden" animate="show" className="flex flex-col gap-2.5">
               {itensDaColuna.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
-                  Nada por aqui.
+                <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-xs leading-relaxed text-muted-foreground">
+                  Nenhum chamado nesta etapa. Quando um chegar, ele aparece aqui na hora.
                 </p>
               ) : (
                 itensDaColuna.map((c) => <ChamadoCard key={c.id} chamado={c} onDespachar={despachar} />)

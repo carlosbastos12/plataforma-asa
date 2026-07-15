@@ -81,3 +81,20 @@ Redesign completo da experiência, absorvendo também os ajustes da auditoria de
 - **Navegação mais leve**: grupo "Setores" rotulado na sidebar, mais respiro entre itens, badges de pendência com explicação no hover.
 - Linguagem revisada para benefício em títulos e subtítulos de todas as telas.
 - Sem commit nesta missão (publicação tratada na Missão P028).
+
+### Alterado — Missão P029: Experiência Premium (2026-07-15)
+Transporte dos princípios de experiência do Projeto-Embarque (acolhimento, explicação, descoberta) — sem copiar código nem conteúdo:
+- **Onboarding "Conheça a Plataforma ASA"** (D-028): apresentação em 4 etapas na primeira visita (boas-vindas → setores interativos → "o sistema trabalha antes de você" → entrar), reabrível pelo botão de ajuda no topo; persistência em `localStorage`.
+- **Home tranquilidade-first** (D-028, substitui a ordem da P027): saudação em tom calmo ("A operação segue rodando") + faixa **"Sob controle"** com o que já está em ordem e vigiado, antes de qualquer pendência; depois decisões, números e fluxo.
+- **Sidebar sem moldura**: fundo integrado à página (sem bloco nem borda), item ativo como pill flutuante com sombra, mais respiro; **cada item de navegação explica no hover** o que faz, o benefício e a pendência atual (campo `beneficio` em `nav-items`).
+- Botão de ajuda (`?`) no topo reabre a apresentação a qualquer momento.
+- Verificação: `eslint` limpo, `npm run build` concluído (21 páginas). Sem commit/push/deploy nesta missão.
+
+### Adicionado — Missão P030: Ecossistema Premium (2026-07-15)
+A plataforma deixa de ser um conjunto de telas de setor e ganha o entorno de um produto completo (D-029):
+- **Cadastros** (`/cadastros` + `/cadastros/[tipo]`): hub com 9 cadastros — Veículos, Motoristas, Seguradoras, Empresas Parceiras, Fornecedores, Postos de Combustível, Tipos de Manutenção, Tipos de Documento e Usuários. Tela genérica única (`src/lib/cadastros.ts` + `[tipo]/page.tsx`): cada cadastro abre se explicando (o que faz, problema que resolve, quem utiliza, benefício) antes de listar os registros. Veículos/Motoristas/Seguradoras derivam do dataset existente; o restante é fictício novo (D-005).
+- **Relatórios** (`/relatorios`): 6 relatórios como experiência, sem backend — Operacional, Documentação, Multas, Manutenção, Combustível e Fechamentos. Cada card explica o que mostra, para quem e o benefício, com "Ver exemplo" abrindo uma leitura ilustrativa em dialog.
+- **Configurações** (`/configuracoes`): Usuários (leva ao cadastro real), Permissões, Alertas, Preferências, Notificações e Integrações (em breve) — cada card com o que é + benefício; cliques respondem com honestidade sobre o que é demonstração.
+- **Navegação em grupos**: sidebar agora tem "Setores" (fluxo do dia) e "Plataforma" (Cadastros, Relatórios, Configurações), todos com propósito e benefício no hover; topbar reconhece as novas áreas.
+- **Estados vazios com ação**: `EmptyState` ganhou botão de ação; coluna vazia do quadro de chamados explica em vez de dizer "nada por aqui".
+- Verificação: `eslint` limpo, `npm run build` concluído (33 páginas). Sem commit/push/deploy nesta missão.

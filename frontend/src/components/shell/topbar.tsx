@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, CircleHelp } from "lucide-react";
+import { useApresentacao } from "@/components/onboarding/conheca-plataforma";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,7 +12,7 @@ import { TODAY } from "@/lib/mock-data";
 import type { ContagemSetor } from "@/lib/insights";
 import { BrandMark } from "./brand-mark";
 import { SidebarNav } from "./sidebar-nav";
-import { NAV_ITEMS } from "./nav-items";
+import { NAV_ITEMS, PLATAFORMA_ITEMS } from "./nav-items";
 import { GlobalSearch } from "./global-search";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -30,9 +31,10 @@ const DATE_LABEL = new Intl.DateTimeFormat("pt-BR", {
 export function Topbar({ contagens }: TopbarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { abrir } = useApresentacao();
 
   const current =
-    [...NAV_ITEMS].reverse().find((item) =>
+    [...NAV_ITEMS, ...PLATAFORMA_ITEMS].reverse().find((item) =>
       item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
     ) ?? NAV_ITEMS[0];
 
@@ -70,6 +72,23 @@ export function Topbar({ contagens }: TopbarProps) {
 
       <div className="flex shrink-0 items-center gap-1.5">
         <span className="hidden pr-2 text-sm capitalize text-muted-foreground lg:block">{DATE_LABEL}</span>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={abrir}
+                aria-label="Conheça a Plataforma ASA"
+              />
+            }
+          >
+            <CircleHelp className="size-[18px]" strokeWidth={2} />
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-56 text-pretty">
+            Reveja a apresentação: o que cada setor faz e como a plataforma trabalha por você.
+          </TooltipContent>
+        </Tooltip>
         <ThemeToggle />
         <Tooltip>
           <TooltipTrigger render={<span className="inline-flex cursor-default" />}>
