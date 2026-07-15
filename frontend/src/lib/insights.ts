@@ -15,9 +15,12 @@ import {
   statusVencimento,
   diasRestantes,
   formatarData,
+  formatarMoeda,
   type Veiculo,
   type DocStatus,
 } from "./mock-data";
+import { diasDeAutonomiaTanque, percentualTanque } from "./combustivel";
+import { ausenciasComImpactoNaEscala, turnosEmAberto } from "./equipe";
 
 /* ---------------- Glossário de siglas (regra: nenhuma sigla sem explicação) ---------------- */
 
@@ -176,4 +179,88 @@ export function veredictoVeiculo(v: Veiculo): Veredicto {
       : "Toda a documentação em dia.",
     acao: "Nenhuma ação necessária hoje.",
   };
+}
+
+/* ---------------- Leitura da operação (home como assistente) ---------------- */
+
+export type TomLeitura = "ok" | "atencao" | "critico";
+
+export interface ItemLeitura {
+  tom: TomLeitura;
+  texto: string;
+  href?: string;
+}
+
+/**
+ * Traduz o estado da plataforma em frases prontas, como um assistente que já
+ * leu tudo por você — nunca uma tabela de números crus. Cada frase cita o
+ * dado que a sustenta, para nunca soar genérica.
+ */
+export function leituraOperacional(): ItemLeitura[] {
+  const i = calcularIndicadores();
+  const itens: ItemLeitura[] = [];
+
+  const autonomia = diasDeAutonomiaTanque();
+  itens.push({
+    tom: autonomia <= 3 ? "critico" : autonomia <= 7 ? "atencao" : "ok",
+    texto:
+      autonomia <= 3
+        ? `O estoque de diesel da base atende apenas mais ${autonomia} dia(s) — vale programar reposição.`
+        : `O estoque de diesel da base atende aproximadamente mais ${autonomia} dias (${percentualTanque()}% do tanque).`,
+    href: "/gestao-da-frota/combustivel",
+  });
+
+  if (i.docsVencidos > 0) {
+    itens.push({
+      tom: "critico",
+      texto: `${i.docsVencidos} documento(s) já venceram e pedem regularização.`,
+      href: "/gestao-da-frota/documentacao",
+    });
+  } else if (i.docsVencendo > 0) {
+    itens.push({
+      tom: "atencao",
+      texto:
+        i.docsVencendo === 1
+          ? "Um documento vencerá em breve — ainda dá tempo de programar."
+          : `${i.docsVencendo} documentos vencerão em breve — ainda dá tempo de programar.`,
+      href: "/gestao-da-frota/documentacao",
+    });
+  } else {
+    itens.push({ tom: "ok", texto: "Toda a documentação da frota segue regular." });
+  }
+
+  if (i.multasAguardando > 0) {
+    itens.push({
+      tom: "atencao",
+      texto: `${i.multasAguardando} multa(s) aguardam indicação de condutor, somando ${formatarMoeda(i.valorEmRisco)}.`,
+      href: "/gestao-da-frota/multas",
+    });
+  } else {
+    itens.push({ tom: "ok", texto: "Não existem multas pendentes de indicação." });
+  }
+
+  const ausencias = ausenciasComImpactoNaEscala();
+  if (ausencias.length > 0) {
+    const a = ausencias[0];
+    itens.push({
+      tom: "atencao",
+      texto: `Existe uma ausência registrada (${a.colaborador}) que poderá impactar a escala — ${a.substituto ? `${a.substituto} já cobre o turno` : "ainda sem substituto definido"}.`,
+      href: "/equipe-operacional",
+    });
+  }
+
+  const abertos = turnosEmAberto();
+  if (abertos.length > 0) {
+    itens.push({
+      tom: "atencao",
+      texto: `${abertos.length} turno(s) da escala seguem em aberto, sem colaborador definido.`,
+      href: "/equipe-operacional",
+    });
+  }
+
+  if (i.caixasEmAberto === 0) {
+    itens.push({ tom: "ok", texto: "O fechamento segue sem divergências — todos os caixas conferidos." });
+  }
+
+  return itens;
 }

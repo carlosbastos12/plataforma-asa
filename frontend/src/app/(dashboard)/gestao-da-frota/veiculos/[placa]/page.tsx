@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Gauge, Hash, CircleAlert, CircleCheckBig, Clock3, Wrench } from "lucide-react";
+import { ArrowLeft, User, Gauge, Hash, CircleAlert, CircleCheckBig, Clock3, Wrench, Fuel } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/status-badge";
 import { Sigla } from "@/components/sigla";
+import { EmptyState } from "@/components/empty-state";
 import { veredictoVeiculo } from "@/lib/insights";
 import {
   FROTA,
@@ -13,6 +14,7 @@ import {
   formatarData,
   formatarMoeda,
 } from "@/lib/mock-data";
+import { abastecimentosPorPlaca } from "@/lib/combustivel";
 import { VehicleTimeline } from "@/components/frota/vehicle-timeline";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,7 @@ export default async function VeiculoDetalhePage({
   const veredicto = veredictoVeiculo(veiculo);
   const critico = veredicto.nivel === "critico";
   const atencao = veredicto.nivel === "atencao";
+  const abastecimentos = abastecimentosPorPlaca(veiculo.placa);
 
   return (
     <div className="flex flex-col gap-6">
@@ -109,6 +112,7 @@ export default async function VeiculoDetalhePage({
           <TabsTrigger value="documentacao">Documentação</TabsTrigger>
           <TabsTrigger value="multas">Multas</TabsTrigger>
           <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
+          <TabsTrigger value="combustivel">Combustível</TabsTrigger>
           <TabsTrigger value="linha-do-tempo">Linha do Tempo</TabsTrigger>
         </TabsList>
 
@@ -200,6 +204,38 @@ export default async function VeiculoDetalhePage({
                       </p>
                     </div>
                     <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{formatarMoeda(m.valor)}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="combustivel" className="mt-5">
+          {abastecimentos.length === 0 ? (
+            <EmptyState
+              icon={Fuel}
+              title="Nenhum abastecimento externo registrado"
+              description="Assim que este veículo abastecer fora da base, o posto, os litros e o valor aparecem aqui — junto do resto do histórico."
+            />
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <ul className="divide-y divide-border">
+                {abastecimentos.map((a) => (
+                  <li key={a.id} className="flex items-center gap-4 px-5 py-4">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <Fuel className="size-4" strokeWidth={2.25} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">{a.posto}</p>
+                      <p className="mt-0.5 text-[13px] text-muted-foreground">
+                        {a.motorista} · {a.viagem} · {formatarData(a.data)}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-semibold text-foreground">{formatarMoeda(a.valor)}</p>
+                      <p className="text-xs text-muted-foreground">{a.litros.toLocaleString("pt-BR")} L</p>
+                    </div>
                   </li>
                 ))}
               </ul>

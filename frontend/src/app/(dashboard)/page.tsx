@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Greeting } from "@/components/home/greeting";
-import { SobControle } from "@/components/home/sob-controle";
+import { LeituraOperacional } from "@/components/home/leitura-operacional";
 import { TaskList } from "@/components/home/task-list";
 import { SectorFlow } from "@/components/home/sector-flow";
 import { KpiStrip } from "@/components/home/kpi-strip";
@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Ordem da home (P029): tranquilidade → decisões → o restante.
- * Primeiro o que está em ordem, depois o que pede decisão, e só então os
- * números e o fluxo dos setores.
+ * Ordem da home (P029/P033): tranquilidade → leitura do assistente →
+ * decisões → o restante. A plataforma se apresenta como quem já conferiu
+ * tudo antes de você chegar, não como uma tela de números para decifrar.
  */
 export default function CentralDeOperacoesPage() {
   const tarefas = montarTarefasDoDia();
@@ -26,7 +26,7 @@ export default function CentralDeOperacoesPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-5">
         <Greeting totalCriticos={criticos.length} totalAtencao={atencao.length} />
-        <SobControle />
+        <LeituraOperacional />
       </div>
 
       <section className="flex flex-col gap-3">

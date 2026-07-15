@@ -1,4 +1,4 @@
-import { LayoutGrid, Radio, Truck, Landmark, FolderOpen, FileText, Settings } from "lucide-react";
+import { LayoutGrid, Radio, Truck, Landmark, FolderOpen, FileText, Settings, Users2 } from "lucide-react";
 
 export interface NavChild {
   href: string;
@@ -49,6 +49,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: "/gestao-da-frota/veiculos", label: "Veículos" },
       { href: "/gestao-da-frota/documentacao", label: "Documentação" },
       { href: "/gestao-da-frota/multas", label: "Multas" },
+      { href: "/gestao-da-frota/combustivel", label: "Combustível" },
     ],
   },
   {
@@ -60,6 +61,14 @@ export const NAV_ITEMS: NavItem[] = [
     beneficio: "O dia termina conferido — o fim do mês chega sem surpresa acumulada.",
     accent: "brand-accent",
     children: [{ href: "/fechamento/caixa", label: "Caixa Particular" }],
+  },
+  {
+    href: "/equipe-operacional",
+    label: "Equipe Operacional",
+    icon: Users2,
+    description: "Escala, faltas e atestados da equipe",
+    pergunta: "Quem está disponível para operar hoje?",
+    beneficio: "Uma ausência nunca pega a escala de surpresa — a substituição já aparece aqui.",
   },
 ];
 

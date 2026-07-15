@@ -111,3 +111,12 @@ Princípios visuais do Protótipo 1 (Auditoria-ASA, referência de forma) transp
 - **Equilíbrio**: conteúdo com largura máxima (max-w-6xl) centralizada em telas largas e mais respiro vertical.
 - **Gráficos**: a versão atual não possui gráficos; decisão consciente de não introduzi-los nesta missão (princípio "ação antes de gráfico").
 - Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (33 páginas).
+
+### Adicionado — Missão P033: Orientada às dores reais da operação (2026-07-15)
+Novo documento permanente [docs/BUSINESS/VOZ_DO_CLIENTE.md](../docs/BUSINESS/VOZ_DO_CLIENTE.md) (D-031) registra 15 dores relatadas por um colaborador da frota (VDC-001) como requisitos oficiais de produto — nunca referenciado na interface:
+- **Home como assistente**: nova `LeituraOperacional` (substitui a faixa "Sob controle" da P029) traduz o estado da plataforma em frases prontas — estoque de diesel em dias de autonomia, documentos vencendo, multas pendentes, ausência que afeta a escala — cada uma citando o dado que a sustenta, nunca um número cru. Saudação da home ajustada para o mesmo tom ("O sistema encontrou N pontos que merecem atenção").
+- **Combustível** (`/gestao-da-frota/combustivel`, nova aba real — substitui o cartão "conceito futuro"): dois fluxos que hoje vivem separados — Tanque da Base (estoque, autonomia em dias, movimentações) e Abastecimento Externo (posto, motorista, viagem, litros, valor).
+- **Equipe Operacional** (`/equipe-operacional`, novo setor): Escala por dia/turno, Faltas e atestados (com impacto na escala e substituto já indicados) e Disponibilidade da equipe.
+- **Histórico do veículo completo**: ficha do veículo ganhou aba "Combustível" com os abastecimentos externos daquele veículo — nenhuma informação some entre históricos separados.
+- Hub de Gestão da Frota reforça a centralização (documentação, multas, combustível, manutenção, certificados, AET, tacógrafo) em linguagem amigável.
+- Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (35 páginas).

@@ -23,17 +23,20 @@ export function Greeting({ totalCriticos, totalAtencao }: GreetingProps) {
   let titulo: string;
   let detalhe: string;
   if (totalCriticos === 0 && totalAtencao === 0) {
-    titulo = "Tudo sob controle por aqui.";
-    detalhe = "Nenhuma pendência esperando por você. Quando algo mudar, você fica sabendo aqui primeiro.";
+    titulo = "A operação segue sob controle.";
+    detalhe = "O sistema não encontrou nenhum ponto de atenção. Quando algo mudar, você fica sabendo aqui primeiro.";
   } else if (totalCriticos === 0) {
-    titulo = "A operação está rodando bem.";
-    detalhe = `Nada urgente agora — ${totalAtencao} prazo(s) se aproximando, para acompanhar quando quiser.`;
+    titulo = "A operação segue sob controle.";
+    detalhe =
+      totalAtencao === 1
+        ? "O sistema encontrou apenas 1 ponto que merece atenção — nada urgente hoje."
+        : `O sistema encontrou apenas ${totalAtencao} pontos que merecem atenção — nada urgente hoje.`;
   } else {
     titulo = "A operação segue rodando.";
     detalhe =
       totalCriticos === 1
-        ? "1 decisão espera por você hoje — o resto está sob controle."
-        : `${totalCriticos} decisões esperam por você hoje — o resto está sob controle.`;
+        ? "O sistema encontrou 1 ponto que pede uma decisão sua agora — o resto está sob controle."
+        : `O sistema encontrou ${totalCriticos} pontos que pedem uma decisão sua agora — o resto está sob controle.`;
   }
 
   return (
