@@ -44,7 +44,7 @@ function ItemNav({
               className={cn(
                 "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
                 active
-                  ? "bg-card text-sidebar-primary shadow-sm ring-1 ring-border"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/65 hover:bg-card/60 hover:text-sidebar-foreground"
               )}
             />
@@ -53,7 +53,7 @@ function ItemNav({
           <Icon
             className={cn(
               "size-[18px] shrink-0 transition-colors",
-              active ? "text-sidebar-primary" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+              active ? "text-primary-foreground" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
             )}
             strokeWidth={2}
           />

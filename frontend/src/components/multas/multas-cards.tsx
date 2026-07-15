@@ -102,7 +102,7 @@ export function MultasCards() {
                     <PessoaAvatar nome={m.motorista} />
                     <Link
                       href={`/gestao-da-frota/veiculos/${m.placa}`}
-                      className="rounded-md bg-secondary px-2 py-1 font-mono text-xs font-semibold text-secondary-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                      className="placa-chip rounded-md px-2 py-1 font-mono text-xs transition-opacity hover:opacity-80"
                     >
                       {m.placa}
                     </Link>
@@ -150,7 +150,7 @@ export function MultasCards() {
               <ul className="divide-y divide-border">
                 {resolvidas.map((m) => (
                   <li key={m.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                    <span className="w-20 shrink-0 rounded-md bg-secondary px-2 py-0.5 text-center font-mono text-xs font-semibold text-secondary-foreground">
+                    <span className="placa-chip w-20 shrink-0 rounded-md px-2 py-0.5 text-center font-mono text-xs">
                       {m.placa}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-foreground">

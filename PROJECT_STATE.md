@@ -4,7 +4,7 @@
 
 ## Fase atual
 
-**Missão P030 — Ecossistema Premium — entregue (aguardando publicação).** A plataforma ganhou o entorno de produto completo (D-029): **Cadastros** (9 cadastros autoexplicativos em tela genérica), **Relatórios** (6 leituras com exemplo ilustrativo, sem backend) e **Configurações** (experiência honesta), com a navegação separada em "Setores" e "Plataforma". Acumula P029 (onboarding "Conheça a Plataforma ASA", home tranquilidade-first, sidebar sem moldura — D-028) e P027 (uma pergunta por tela — D-027). Produção atual (plataforma-asa.vercel.app) está na P027/P028; P029+P030 estão na árvore de trabalho, sem commit — publicação em missão separada. Ainda sem backend, banco, autenticação ou integração.
+**Missão P032 — Recuperação da identidade visual — entregue e publicada.** Princípios do Protótipo 1 transportados (D-030): elevação de repouso, chip de placa escuro, hierarquia dominante, navegação ativa em petróleo, largura máxima de conteúdo. Acumula P031 (marca "ASA Reboques"), P030 (ecossistema: Cadastros, Relatórios, Configurações — D-029), P029 (onboarding + home tranquilidade-first — D-028) e P027 (uma pergunta por tela — D-027). Publicação: P029–P032 comitadas e enviadas juntas ao GitHub nesta data. Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
@@ -59,4 +59,4 @@ Acesse `http://localhost:3000`.
 
 ## Última atualização
 
-2026-07-15 — Missão P030 (Ecossistema Premium) entregue: Cadastros, Relatórios e Configurações como experiência, navegação em grupos "Setores"/"Plataforma", estados vazios com ação. Build com 33 páginas. Aguardando missão de publicação (sem commit).
+2026-07-15 — Missão P032 (Recuperação da identidade visual) entregue e publicada junto com P029–P031. Build com 33 páginas. Pendência documentada em D-030: fluxo "Despachar motorista" é inferência de demonstração, a revisar na rodada operacional.

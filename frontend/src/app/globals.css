@@ -100,6 +100,9 @@
   --chart-4: #8A9A6B;
   --chart-5: #6B5B95;
   --radius: 0.75rem;
+  /* Elevação suave constante (P032): toda superfície descansa sobre uma
+     sombra discreta, como no Protótipo 1 — profundidade sem peso. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 26, 0.05), 0 4px 14px rgba(16, 24, 26, 0.05);
   /* Sidebar clara: a moldura fica quieta, o conteúdo fala mais alto.
      (O bloco escuro anterior era o elemento mais pesado da tela — P025.) */
   --sidebar: #FBFCFC;
@@ -145,6 +148,7 @@
   --chart-3: #6FA9BB;
   --chart-4: #A9BB8C;
   --chart-5: #9C8CC4;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
   --sidebar: #0A1211;
   --sidebar-foreground: #DCE6E3;
   --sidebar-primary: #4FBFA8;
@@ -167,8 +171,26 @@
   }
 }
 
+@layer components {
+  /* Cartões e painéis (bg-card + canto arredondado) ganham elevação de
+     repouso; utilitários de sombra explícitos (hover:shadow-md etc.)
+     continuam vencendo por estarem na camada utilities. */
+  .bg-card.rounded-2xl,
+  .bg-card.rounded-xl {
+    box-shadow: var(--shadow-card);
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  /* Chip de placa (P032): assinatura visual herdada do Protótipo 1 —
+     a placa é o identificador mais importante da operação e se veste como tal. */
+  .placa-chip {
+    background: var(--foreground);
+    color: var(--background);
+    font-weight: 600;
+    letter-spacing: 0.03em;
   }
 }

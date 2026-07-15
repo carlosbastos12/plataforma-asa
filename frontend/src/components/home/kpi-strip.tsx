@@ -109,7 +109,7 @@ export function KpiStrip({ indicadores }: { indicadores: Indicadores }) {
                 <kpi.icon className="size-[17px]" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-3xl font-semibold tracking-tight text-foreground tabular-nums">
+                <p className="text-3xl font-bold tracking-tight text-foreground tabular-nums">
                   <NumeroAnimado valor={kpi.valor} formato={kpi.formato} />
                 </p>
                 <p className="mt-1 text-[13px] font-medium text-foreground/80">{kpi.rotulo}</p>

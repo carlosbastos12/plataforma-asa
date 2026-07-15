@@ -14,7 +14,7 @@ export function VehicleCard({ veiculo }: { veiculo: Veiculo }) {
     <Link href={`/gestao-da-frota/veiculos/${veiculo.placa}`}>
       <Card className="h-full gap-3 p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
         <div className="flex items-start justify-between gap-2">
-          <span className="rounded-md bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold tracking-wide text-secondary-foreground">
+          <span className="placa-chip rounded-md px-2.5 py-1 font-mono text-[13px]">
             {veiculo.placa}
           </span>
           <StatusBadge status={status} />

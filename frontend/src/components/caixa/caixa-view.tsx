@@ -95,7 +95,7 @@ export function CaixaView() {
               <span className="w-14 shrink-0 text-xs text-muted-foreground">{l.hora}</span>
               <span className="min-w-0 flex-1 truncate text-foreground">{l.descricao}</span>
               {l.placa && (
-                <span className="hidden shrink-0 rounded-md bg-secondary px-2 py-0.5 font-mono text-xs font-semibold text-secondary-foreground sm:inline">
+                <span className="placa-chip hidden shrink-0 rounded-md px-2 py-0.5 font-mono text-xs sm:inline">
                   {l.placa}
                 </span>
               )}

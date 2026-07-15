@@ -62,7 +62,7 @@ export function Topbar({ contagens }: TopbarProps) {
       </Sheet>
 
       <div className="min-w-0 shrink-0">
-        <h1 className="truncate text-[15px] font-semibold text-foreground">{current.label}</h1>
+        <h1 className="truncate text-[17px] font-bold tracking-tight text-foreground">{current.label}</h1>
         <p className="hidden truncate text-xs text-muted-foreground sm:block">{current.pergunta}</p>
       </div>
 

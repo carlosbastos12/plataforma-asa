@@ -46,7 +46,7 @@ export default async function VeiculoDetalhePage({
 
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <span className="rounded-lg bg-secondary px-3 py-2 font-mono text-base font-semibold tracking-wide text-secondary-foreground">
+          <span className="placa-chip rounded-lg px-3 py-2 font-mono text-base">
             {veiculo.placa}
           </span>
           <div>

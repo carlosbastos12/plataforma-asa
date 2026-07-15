@@ -98,3 +98,16 @@ A plataforma deixa de ser um conjunto de telas de setor e ganha o entorno de um 
 - **Navegação em grupos**: sidebar agora tem "Setores" (fluxo do dia) e "Plataforma" (Cadastros, Relatórios, Configurações), todos com propósito e benefício no hover; topbar reconhece as novas áreas.
 - **Estados vazios com ação**: `EmptyState` ganhou botão de ação; coluna vazia do quadro de chamados explica em vez de dizer "nada por aqui".
 - Verificação: `eslint` limpo, `npm run build` concluído (33 páginas). Sem commit/push/deploy nesta missão.
+
+### Alterado — Missão P031: Marca "ASA Reboques" (2026-07-15)
+- Todos os textos visíveis padronizados para a marca institucional: título da aba, onboarding (2), aria-label da ajuda, selo da sidebar ("ASA Reboques") e tooltip do AUTEM. Comentários internos e documentação técnica intactos. 6 textos em 5 arquivos.
+
+### Alterado — Missão P032: Recuperação da identidade visual (2026-07-15)
+Princípios visuais do Protótipo 1 (Auditoria-ASA, referência de forma) transportados para a arquitetura atual, sem alterar fluxo, navegação ou componentes (D-030):
+- **Elevação de repouso**: token `--shadow-card` + regra global — todo cartão/painel (`bg-card` arredondado) descansa sobre sombra suave, como no Protótipo 1; hovers existentes continuam vencendo.
+- **Chip de placa escuro** (`.placa-chip`): assinatura visual do Protótipo 1 recuperada — placas em chip de alto contraste monoespaçado em 7 pontos da interface (frota, ficha, documentação, multas, caixa).
+- **Hierarquia**: título da página na topbar de 15px/semibold → 17px/bold; valores dos indicadores da home em bold.
+- **Sidebar**: item ativo em petróleo sólido com texto claro (estado confiante do Protótipo 1) e logo com gradiente petróleo→azul-petróleo.
+- **Equilíbrio**: conteúdo com largura máxima (max-w-6xl) centralizada em telas largas e mais respiro vertical.
+- **Gráficos**: a versão atual não possui gráficos; decisão consciente de não introduzi-los nesta missão (princípio "ação antes de gráfico").
+- Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (33 páginas).

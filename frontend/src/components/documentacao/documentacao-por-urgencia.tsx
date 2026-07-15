@@ -69,7 +69,7 @@ function CardVencido({ doc }: { doc: Doc }) {
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2.5">
           <span className="flex items-center gap-2">
             <PessoaAvatar nome={doc.motorista} />
-            <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+            <span className="placa-chip rounded-md px-2 py-0.5 font-mono text-xs">
               {doc.placa}
             </span>
           </span>
@@ -178,7 +178,7 @@ export function DocumentacaoPorUrgencia() {
                     href={`/gestao-da-frota/veiculos/${d.placa}`}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-secondary/50"
                   >
-                    <span className="w-20 shrink-0 rounded-md bg-secondary px-2 py-0.5 text-center font-mono text-xs font-semibold text-secondary-foreground">
+                    <span className="placa-chip w-20 shrink-0 rounded-md px-2 py-0.5 text-center font-mono text-xs">
                       {d.placa}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-foreground">
