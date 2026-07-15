@@ -42,10 +42,13 @@ function ItemNav({
               href={item.href}
               onClick={onNavigate}
               className={cn(
+                // Contraste reduzido (P034): identidade por texto + traço fino,
+                // não por preenchimento sólido — o conteúdo da página continua
+                // sendo o elemento mais forte da tela, a sidebar só orienta.
                 "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
                 active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-sidebar-foreground/65 hover:bg-card/60 hover:text-sidebar-foreground"
+                  ? "bg-primary/8 text-primary"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground"
               )}
             />
           }
@@ -53,7 +56,7 @@ function ItemNav({
           <Icon
             className={cn(
               "size-[18px] shrink-0 transition-colors",
-              active ? "text-primary-foreground" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+              active ? "text-primary" : "text-sidebar-foreground/35 group-hover:text-sidebar-foreground/65"
             )}
             strokeWidth={2}
           />

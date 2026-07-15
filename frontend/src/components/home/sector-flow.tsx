@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Radio, Truck, Landmark, ArrowRight } from "lucide-react";
+import { Radio, Truck, Users2, Fuel, Landmark, ArrowRight } from "lucide-react";
 
 interface Estacao {
   href: string;
@@ -16,20 +16,29 @@ interface Estacao {
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.25 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.25 } },
 };
 const item = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
+/**
+ * O caminho real do atendimento (P034, VDC-001): nasce no Acionamento,
+ * passa pela Frota e pela Equipe que a operam, consome Combustível e se
+ * consolida no Fechamento — cinco estações, não três.
+ */
 export function SectorFlow({
   acionamento,
   gestaoDaFrota,
+  equipe,
+  combustivelDias,
   fechamento,
 }: {
   acionamento: number;
   gestaoDaFrota: number;
+  equipe: number;
+  combustivelDias: number;
   fechamento: number;
 }) {
   const estacoes: Estacao[] = [
@@ -52,6 +61,24 @@ export function SectorFlow({
       cor: "var(--primary)",
     },
     {
+      href: "/equipe-operacional",
+      nome: "Equipe Operacional",
+      descricao: "Quem está disponível hoje",
+      contagem: equipe,
+      rotuloContagem: equipe === 1 ? "ausência com impacto" : "ausências com impacto",
+      icon: Users2,
+      cor: "var(--chart-5)",
+    },
+    {
+      href: "/gestao-da-frota/combustivel",
+      nome: "Combustível",
+      descricao: "O que move a frota",
+      contagem: combustivelDias,
+      rotuloContagem: "dias de autonomia",
+      icon: Fuel,
+      cor: "var(--chart-2)",
+    },
+    {
       href: "/fechamento",
       nome: "Fechamento",
       descricao: "O dia se consolida",
@@ -67,7 +94,7 @@ export function SectorFlow({
       variants={container}
       initial="hidden"
       animate="show"
-      className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center"
+      className="flex flex-col items-stretch gap-2 lg:flex-row lg:items-center"
     >
       {estacoes.map((estacao, i) => (
         <div key={estacao.href} className="flex flex-1 items-center gap-2">
@@ -103,7 +130,7 @@ export function SectorFlow({
           {i < estacoes.length - 1 && (
             <motion.div
               variants={item}
-              className="hidden shrink-0 text-muted-foreground/30 sm:block"
+              className="hidden shrink-0 text-muted-foreground/30 lg:block"
               aria-hidden
             >
               <ArrowRight className="size-5" strokeWidth={2} />

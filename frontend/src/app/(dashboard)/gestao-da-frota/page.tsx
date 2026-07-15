@@ -1,11 +1,15 @@
-import { Truck, FileCheck2, ShieldAlert, Fuel, ClipboardCheck, ShoppingCart } from "lucide-react";
+import { Truck, FileCheck2, ShieldAlert, Fuel, ClipboardCheck, ShoppingCart, CircleAlert } from "lucide-react";
 import { SectorLinkCard } from "@/components/shell/sector-link-card";
-import { FROTA, statusVencimento } from "@/lib/mock-data";
+import { StatCard } from "@/components/home/stat-card";
+import { FROTA, situacaoVeiculo, statusVencimento } from "@/lib/mock-data";
 import { diasDeAutonomiaTanque } from "@/lib/combustivel";
 
 export default function GestaoDaFrotaPage() {
-  const docsVencidos = FROTA.flatMap((v) => v.docs).filter((d) => statusVencimento(d.vencimento) === "critico").length;
+  const todosDocs = FROTA.flatMap((v) => v.docs);
+  const docsVencidos = todosDocs.filter((d) => statusVencimento(d.vencimento) === "critico").length;
+  const docsEmDiaPct = Math.round((todosDocs.filter((d) => statusVencimento(d.vencimento) === "regular").length / todosDocs.length) * 100);
   const multasAbertas = FROTA.flatMap((v) => v.multas).filter((m) => m.status === "aguardando_indicacao").length;
+  const frotaApta = FROTA.filter((v) => situacaoVeiculo(v) !== "critico").length;
   const autonomia = diasDeAutonomiaTanque();
 
   return (
@@ -17,6 +21,13 @@ export default function GestaoDaFrotaPage() {
           lugar, com aviso antes de qualquer prazo vencer.
         </p>
       </div>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard icon={Truck} label="frota apta a operar" value={`${frotaApta}/${FROTA.length}`} tone={frotaApta === FROTA.length ? "success" : "default"} />
+        <StatCard icon={FileCheck2} label="documentação em dia" value={`${docsEmDiaPct}%`} tone={docsEmDiaPct === 100 ? "success" : "default"} />
+        <StatCard icon={CircleAlert} label="pendências críticas" value={String(docsVencidos + multasAbertas)} tone={docsVencidos + multasAbertas > 0 ? "warning" : "success"} />
+        <StatCard icon={Fuel} label="diesel disponível" value={`${autonomia}d`} hint="autonomia do tanque da base" tone={autonomia <= 3 ? "warning" : "default"} />
+      </section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SectorLinkCard

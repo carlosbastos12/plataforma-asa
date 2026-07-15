@@ -132,6 +132,11 @@ export function CombustivelView() {
           />
         </section>
 
+        <p className="text-[13px] text-muted-foreground">
+          Cada abastecimento já sai com posto, motorista, viagem, litros e valor prontos — a prestação de contas do
+          motorista não depende de recibo guardado.
+        </p>
+
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <ul className="divide-y divide-border">
             {ABASTECIMENTOS_EXTERNOS.map((a) => (

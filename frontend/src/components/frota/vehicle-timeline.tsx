@@ -1,5 +1,6 @@
-import { FileCheck2, ShieldAlert, Wrench } from "lucide-react";
+import { FileCheck2, ShieldAlert, Wrench, Fuel } from "lucide-react";
 import { formatarData, formatarMoeda, type Veiculo } from "@/lib/mock-data";
+import { abastecimentosPorPlaca } from "@/lib/combustivel";
 import { cn } from "@/lib/utils";
 
 interface EventoTimeline {
@@ -10,6 +11,12 @@ interface EventoTimeline {
   icone: typeof FileCheck2;
 }
 
+/**
+ * O prontuário do veículo (P034): documentos, multas, manutenção e
+ * combustível — tudo que hoje vive espalhado entra na mesma linha do
+ * tempo, para o usuário nunca precisar cruzar telas para entender um
+ * veículo.
+ */
 export function VehicleTimeline({ veiculo }: { veiculo: Veiculo }) {
   const eventos: EventoTimeline[] = [
     ...veiculo.docs.map((d) => ({
@@ -32,6 +39,13 @@ export function VehicleTimeline({ veiculo }: { veiculo: Veiculo }) {
       descricao: `${m.oficina} · ${formatarMoeda(m.valor)} · ${m.km.toLocaleString("pt-BR")} km`,
       tom: "neutro" as const,
       icone: Wrench,
+    })),
+    ...abastecimentosPorPlaca(veiculo.placa).map((a) => ({
+      data: a.data,
+      titulo: `Abastecimento — ${a.posto}`,
+      descricao: `${a.motorista} · ${a.litros.toLocaleString("pt-BR")} L · ${formatarMoeda(a.valor)}`,
+      tom: "neutro" as const,
+      icone: Fuel,
     })),
   ].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 

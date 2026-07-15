@@ -4,7 +4,7 @@
 
 ## Fase atual
 
-**Missão P033 — Orientada às dores reais da operação — entregue (aguardando publicação).** Novo documento permanente `docs/BUSINESS/VOZ_DO_CLIENTE.md` (D-031) registra dores reais de colaboradores como requisitos oficiais. Home reformulada como assistente (`LeituraOperacional`, frases prontas em vez de números crus). Dois setores novos: **Combustível** (tanque da base + abastecimento externo) e **Equipe Operacional** (escala, faltas/atestados, disponibilidade). Acumula P032 (identidade visual do Protótipo 1 — D-030, publicada), P031 (marca "ASA Reboques"), P030 (ecossistema: Cadastros, Relatórios, Configurações — D-029) e P029 (onboarding + home tranquilidade-first — D-028). P029–P032 já publicadas; P033 está na árvore de trabalho, aguardando commit/push desta missão. Ainda sem backend, banco, autenticação ou integração.
+**Missão P034 — Orientada à operação real — entregue (aguardando publicação).** Home remodelada por completo (D-032): dashboard executivo de 6 números, "Decidir agora" limitado a 3 itens com consequência+motivo+ação, "Tudo sob controle" e fluxo de 5 estações (Acionamento → Frota → Equipe → Combustível → Fechamento). Ficha do veículo agora abre no prontuário unificado; Gestão da Frota ganhou faixa de indicadores; Equipe Operacional ganhou banners de impacto por ausência; sidebar com contraste reduzido (D-033). Acumula P033 (Voz do Cliente — D-031), P032 (identidade visual — D-030, publicada), P031 (marca "ASA Reboques"), P030 (ecossistema — D-029) e P029 (onboarding — D-028). P029–P032 já publicadas; P033–P034 estão na árvore de trabalho, aguardando commit/push. Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
@@ -62,4 +62,4 @@ Acesse `http://localhost:3000`.
 
 ## Última atualização
 
-2026-07-15 — Missão P033 (Orientada às dores reais da operação) entregue: Voz do Cliente como fonte oficial de requisitos (D-031), home como assistente, setores Combustível e Equipe Operacional novos. Build com 35 páginas. Pendências documentadas: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030), ambas a revisar em rodada futura.
+2026-07-15 — Missão P034 (Orientada à operação real) entregue: home remodelada (dashboard executivo, Decidir agora limitado a 3, fluxo de 5 estações), ficha do veículo como prontuário unificado, Gestão da Frota com faixa de indicadores, Equipe Operacional com banners de impacto, sidebar de contraste reduzido. Build com 35 páginas. Pendências documentadas: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030), ambas a revisar em rodada futura.

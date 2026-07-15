@@ -107,13 +107,16 @@ export default async function VeiculoDetalhePage({
         </div>
       </div>
 
-      <Tabs defaultValue="documentacao">
+      {/* Prontuário como aba padrão (P034): tudo sobre o veículo — documentos,
+          multas, manutenção, combustível — numa só linha do tempo, para não
+          exigir ir atrás de informação em telas separadas. */}
+      <Tabs defaultValue="linha-do-tempo">
         <TabsList>
+          <TabsTrigger value="linha-do-tempo">Histórico completo</TabsTrigger>
           <TabsTrigger value="documentacao">Documentação</TabsTrigger>
           <TabsTrigger value="multas">Multas</TabsTrigger>
           <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
           <TabsTrigger value="combustivel">Combustível</TabsTrigger>
-          <TabsTrigger value="linha-do-tempo">Linha do Tempo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="documentacao" className="mt-5">

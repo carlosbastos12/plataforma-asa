@@ -16,11 +16,13 @@ import {
   diasRestantes,
   formatarData,
   formatarMoeda,
+  montarTarefasDoDia,
   type Veiculo,
   type DocStatus,
+  type TarefaDoDia,
 } from "./mock-data";
-import { diasDeAutonomiaTanque, percentualTanque } from "./combustivel";
-import { ausenciasComImpactoNaEscala, turnosEmAberto } from "./equipe";
+import { diasDeAutonomiaTanque, percentualTanque, TANQUE_BASE } from "./combustivel";
+import { ausenciasComImpactoNaEscala, turnosEmAberto, disponiveisAgora, EQUIPE } from "./equipe";
 
 /* ---------------- Glossário de siglas (regra: nenhuma sigla sem explicação) ---------------- */
 
@@ -262,5 +264,127 @@ export function leituraOperacional(): ItemLeitura[] {
     itens.push({ tom: "ok", texto: "O fechamento segue sem divergências — todos os caixas conferidos." });
   }
 
+  return itens;
+}
+
+/* ---------------- Dashboard executivo (P034) ---------------- */
+
+export interface CardExecutivo {
+  href: string;
+  rotulo: string;
+  valor: string;
+  detalhe: string;
+  tom: "ok" | "atencao" | "critico" | "neutro";
+}
+
+/**
+ * Os seis números que a diretoria olha antes de qualquer lista — cada um
+ * responde por si só "está tudo bem nessa frente?" (P034).
+ */
+export function indicadoresExecutivos(): CardExecutivo[] {
+  const i = calcularIndicadores();
+  const autonomia = diasDeAutonomiaTanque();
+  const disponiveis = disponiveisAgora().length;
+
+  return [
+    {
+      href: "/gestao-da-frota/veiculos",
+      rotulo: "frota apta",
+      valor: `${i.frotaApta}/${i.frotaTotal}`,
+      detalhe: "veículos liberados para operar",
+      tom: i.veiculosCriticos > 0 ? "neutro" : "ok",
+    },
+    {
+      href: "/gestao-da-frota/veiculos",
+      rotulo: "veículos indisponíveis",
+      valor: String(i.veiculosCriticos),
+      detalhe: i.veiculosCriticos > 0 ? "pendência vencida impede a operação" : "nenhum veículo parado",
+      tom: i.veiculosCriticos > 0 ? "critico" : "ok",
+    },
+    {
+      href: "/gestao-da-frota/documentacao",
+      rotulo: "documentos próximos do vencimento",
+      valor: String(i.docsVencendo),
+      detalhe: "dentro da janela de 15 dias",
+      tom: i.docsVencendo > 0 ? "atencao" : "ok",
+    },
+    {
+      href: "/gestao-da-frota/combustivel",
+      rotulo: "diesel disponível",
+      valor: `${autonomia}d`,
+      detalhe: `${TANQUE_BASE.estoqueLitros.toLocaleString("pt-BR")} L no tanque da base`,
+      tom: autonomia <= 3 ? "critico" : autonomia <= 7 ? "atencao" : "ok",
+    },
+    {
+      href: "/equipe-operacional",
+      rotulo: "equipe disponível",
+      valor: `${disponiveis}/${EQUIPE.length}`,
+      detalhe: "pronta para escala hoje",
+      tom: disponiveis >= EQUIPE.length - 1 ? "ok" : "neutro",
+    },
+    {
+      href: "/acionamento",
+      rotulo: "chamados aguardando",
+      valor: String(i.chamadosAguardando),
+      detalhe: "esperando despacho de motorista",
+      tom: i.chamadosAguardando > 2 ? "atencao" : "ok",
+    },
+  ];
+}
+
+/* ---------------- Decidir agora: no máximo 3, sempre com ação ---------------- */
+
+export interface ItemDecisao {
+  href: string;
+  consequencia: string;
+  motivo: string;
+  acao: string;
+}
+
+function acaoParaTarefa(t: TarefaDoDia): string {
+  if (t.id.startsWith("doc-")) return "Renovar o documento libera o veículo para voltar a operar.";
+  if (t.id.startsWith("multa-")) return "Indicar o condutor agora evita que o valor da multa dobre.";
+  return "Conferir e fechar o caixa evita divergência acumulada no fim do mês.";
+}
+
+/**
+ * Nunca mais que 3 decisões por vez — o resto vira ruído. Cada uma responde
+ * três perguntas: o que está em jogo (consequência), por que (motivo) e o
+ * que fazer a respeito (ação), nunca apenas um status (P034).
+ */
+export function tarefasPrioritarias(limite = 3): ItemDecisao[] {
+  return montarTarefasDoDia()
+    .slice(0, limite)
+    .map((t) => ({ href: t.href, consequencia: t.titulo, motivo: t.detalhe, acao: acaoParaTarefa(t) }));
+}
+
+/* ---------------- Tudo sob controle ---------------- */
+
+export interface ItemControle {
+  href: string;
+  texto: string;
+}
+
+/**
+ * O que já está em ordem — e continua sendo vigiado. Mostrado só depois das
+ * decisões, nunca como forma de esconder um problema (P034).
+ */
+export function itensSobControle(): ItemControle[] {
+  const docs = FROTA.flatMap((v) => v.docs);
+  const docsEmDia = docs.filter((d) => statusVencimento(d.vencimento) === "regular").length;
+  const aptos = FROTA.filter((v) => situacaoVeiculo(v) !== "critico").length;
+  const disponiveis = disponiveisAgora().length;
+  const autonomia = diasDeAutonomiaTanque();
+
+  const itens: ItemControle[] = [
+    { href: "/gestao-da-frota/documentacao", texto: `${docsEmDia} documentos em dia` },
+    { href: "/gestao-da-frota/veiculos", texto: `${aptos} de ${FROTA.length} veículos liberados` },
+  ];
+  if (autonomia > 7) {
+    itens.push({ href: "/gestao-da-frota/combustivel", texto: "Abastecimento dentro do normal" });
+  }
+  if (disponiveis === EQUIPE.length) {
+    itens.push({ href: "/equipe-operacional", texto: "Equipe completa hoje" });
+  }
   return itens;
 }

@@ -120,3 +120,13 @@ Novo documento permanente [docs/BUSINESS/VOZ_DO_CLIENTE.md](../docs/BUSINESS/VOZ
 - **Histórico do veículo completo**: ficha do veículo ganhou aba "Combustível" com os abastecimentos externos daquele veículo — nenhuma informação some entre históricos separados.
 - Hub de Gestão da Frota reforça a centralização (documentação, multas, combustível, manutenção, certificados, AET, tacógrafo) em linguagem amigável.
 - Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (35 páginas).
+
+### Alterado — Missão P034: Orientada à operação real (2026-07-15)
+Fontes revisadas: VOZ_DO_CLIENTE.md, DECISIONS.md, os dois protótipos internos (`Auditoria-ASA/Analise/prototipo` e `Prototipo 2`) e o Embarque como referência de experiência (D-032, D-033):
+- **Home remodelada**: nova ordem saudação → leitura do assistente → **dashboard executivo** (6 cards grandes: frota apta, veículos indisponíveis, documentos vencendo, diesel disponível, equipe disponível, chamados aguardando) → **Decidir agora** (máx. 3, sempre consequência+motivo+ação) → **Tudo sob controle** → **fluxo operacional de 5 estações** (Acionamento → Frota → Equipe → Combustível → Fechamento). `kpi-strip.tsx` e `task-list.tsx` removidos.
+- **Ficha do veículo como prontuário**: abre por padrão em "Histórico completo" (linha do tempo unificando documentos, multas, manutenção e combustível — antes só tinha os três primeiros).
+- **Gestão da Frota**: faixa de 4 indicadores grandes no topo do hub (inspirada nos protótipos internos).
+- **Equipe Operacional**: banner de impacto por ausência na linguagem do relato do Vitor ("Substituído por X — nenhum chamado ficou descoberto" / "Ainda sem substituto — turno em risco").
+- **Combustível**: nota de prestação de contas na aba externa (posto/motorista/viagem/litros/valor já prontos, sem depender de recibo).
+- **Sidebar**: item ativo com contraste reduzido (texto colorido + fundo sutil, sem preenchimento sólido) — o conteúdo da página volta a ser o elemento mais forte da tela.
+- Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (35 páginas). Sem commit/push desta missão até a rodada de publicação.
