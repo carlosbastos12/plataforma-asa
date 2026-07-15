@@ -1,0 +1,172 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ===================================================================
+   Plataforma-ASA — Design tokens
+   Paleta própria: petróleo/teal profundo como cor de marca (evoca
+   confiança e operação noturna/rodoviária, sem cair no azul genérico
+   de SaaS), cobre queimado como destaque pontual, neutros levemente
+   frios. Tipografia: Geist (já nativa do Next.js) para tudo, variando
+   peso e escala — sem misturar famílias por modismo.
+=================================================================== */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-foreground: var(--brand-accent-foreground);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #F5F7F6;
+  --foreground: #10181A;
+  --card: #FFFFFF;
+  --card-foreground: #10181A;
+  --popover: #FFFFFF;
+  --popover-foreground: #10181A;
+  --primary: #0E5E52;
+  --primary-foreground: #F3FBF9;
+  --secondary: #EBF0EE;
+  --secondary-foreground: #12201D;
+  --muted: #EEF2F0;
+  --muted-foreground: #5D6E6A;
+  --accent: #E7EEEC;
+  --accent-foreground: #12201D;
+  --destructive: #B3261E;
+  --destructive-soft: #FBEAE8;
+  --success: #1E7A56;
+  --success-foreground: #FFFFFF;
+  --success-soft: #E4F3EC;
+  --warning: #9C5B0A;
+  --warning-foreground: #FFFFFF;
+  --warning-soft: #FBF0DD;
+  --brand-accent: #B6631A;
+  --brand-accent-foreground: #FFFFFF;
+  --border: #E1E7E4;
+  --input: #E1E7E4;
+  --ring: #0E5E52;
+  --chart-1: #0E5E52;
+  --chart-2: #B6631A;
+  --chart-3: #3E7C8C;
+  --chart-4: #8A9A6B;
+  --chart-5: #6B5B95;
+  --radius: 0.75rem;
+  --sidebar: #101B19;
+  --sidebar-foreground: #DCE6E3;
+  --sidebar-primary: #1D8A78;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #172624;
+  --sidebar-accent-foreground: #DCE6E3;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #1D8A78;
+}
+
+.dark {
+  --background: #0A1211;
+  --foreground: #E7EDEB;
+  --card: #101B19;
+  --card-foreground: #E7EDEB;
+  --popover: #101B19;
+  --popover-foreground: #E7EDEB;
+  --primary: #4FBFA8;
+  --primary-foreground: #06231D;
+  --secondary: #16231F;
+  --secondary-foreground: #E7EDEB;
+  --muted: #16231F;
+  --muted-foreground: #8FA6A0;
+  --accent: #182823;
+  --accent-foreground: #E7EDEB;
+  --destructive: #E2695F;
+  --destructive-soft: #301715;
+  --success: #4FBF8F;
+  --success-foreground: #06231D;
+  --success-soft: #12291F;
+  --warning: #DBA24A;
+  --warning-foreground: #241B08;
+  --warning-soft: #2C2311;
+  --brand-accent: #D98A4A;
+  --brand-accent-foreground: #241505;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #4FBFA8;
+  --chart-1: #4FBFA8;
+  --chart-2: #D98A4A;
+  --chart-3: #6FA9BB;
+  --chart-4: #A9BB8C;
+  --chart-5: #9C8CC4;
+  --sidebar: #0A1211;
+  --sidebar-foreground: #DCE6E3;
+  --sidebar-primary: #4FBFA8;
+  --sidebar-primary-foreground: #06231D;
+  --sidebar-accent: #16231F;
+  --sidebar-accent-foreground: #DCE6E3;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #4FBFA8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
