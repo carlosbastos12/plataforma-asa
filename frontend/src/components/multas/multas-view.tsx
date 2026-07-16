@@ -37,7 +37,7 @@ const STATUS_ROTULO: Record<Multa["status"], string> = {
 };
 
 /**
- * Multas em tabela única com filtros e painéis laterais (P036, clone do
+ * Multas em tabela única com filtros e painéis laterais (Clone do Protótipo 1, clone do
  * Protótipo 1 `multas.html`) — substitui os ~30 mil VLOOKUPs da planilha
  * original por um cadastro real.
  */

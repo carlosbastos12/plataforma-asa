@@ -42,7 +42,7 @@ function ItemNav({
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                // Item ativo sólido (P036): clone do Protótipo 1
+                // Item ativo sólido (Clone do Protótipo 1): clone do Protótipo 1
                 // (`.nav-item.active { background: var(--brand); color:#fff }`).
                 "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors",
                 active

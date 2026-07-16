@@ -16,7 +16,7 @@ interface BarChartProps {
   currency?: boolean;
 }
 
-/** Gráfico de barras em SVG puro (P036) — porta fiel do Protótipo 1 (`barChart`). */
+/** Gráfico de barras em SVG puro (Clone do Protótipo 1) — porta fiel do Protótipo 1 (`barChart`). */
 export function BarChart({ data, height = 220, color = "var(--primary)", currency }: BarChartProps) {
   const { ref, width: w } = useContainerWidth();
   const padL = 34;

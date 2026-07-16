@@ -20,7 +20,7 @@ interface KpiCardProps {
   href?: string;
 }
 
-/** KPI card no padrão exato do Protótipo 1 (P036): `.kpi-card.tone-*`. */
+/** KPI card no padrão exato do Protótipo 1 (Clone do Protótipo 1): `.kpi-card.tone-*`. */
 export function KpiCard({ icon: Icon, label, value, foot, tone, href }: KpiCardProps) {
   const content = (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4.5">

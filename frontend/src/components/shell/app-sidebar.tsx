@@ -10,7 +10,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ contagens }: AppSidebarProps) {
   return (
-    // Sidebar escura no padrão do Protótipo 1 (P036) — bloco fixo com borda
+    // Sidebar escura no padrão do Protótipo 1 (Clone do Protótipo 1) — bloco fixo com borda
     // sutil, reverte a sidebar clara da missão P025 a pedido explícito do CEO.
     <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
       <div className="border-b border-sidebar-border px-5 py-5">

@@ -21,7 +21,7 @@ import {
   type DocStatus,
   type TarefaDoDia,
 } from "./mock-data";
-import { diasDeAutonomiaTanque, percentualTanque, TANQUE_BASE } from "./combustivel";
+import { diasDeAutonomiaTanque, percentualTanque, estoqueAtualLitros } from "./combustivel";
 import { ausenciasComImpactoNaEscala, turnosEmAberto, disponiveisAgora, EQUIPE } from "./equipe";
 
 /* ---------------- Glossário de siglas (regra: nenhuma sigla sem explicação) ---------------- */
@@ -183,7 +183,7 @@ export function veredictoVeiculo(v: Veiculo): Veredicto {
   };
 }
 
-/* ---------------- Painéis do Dashboard (P036) ---------------- */
+/* ---------------- Painéis do Dashboard (Clone do Protótipo 1) ---------------- */
 
 export interface VencimentoLinha {
   placa: string;
@@ -367,7 +367,7 @@ export function indicadoresExecutivos(): CardExecutivo[] {
       href: "/gestao-da-frota/combustivel",
       rotulo: "diesel disponível",
       valor: `${autonomia}d`,
-      detalhe: `${TANQUE_BASE.estoqueLitros.toLocaleString("pt-BR")} L no tanque da base`,
+      detalhe: `${estoqueAtualLitros().toLocaleString("pt-BR")} L no tanque da base`,
       tom: autonomia <= 3 ? "critico" : autonomia <= 7 ? "atencao" : "ok",
     },
     {

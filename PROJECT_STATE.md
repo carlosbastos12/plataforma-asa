@@ -4,7 +4,7 @@
 
 ## Fase atual
 
-**Clone visual completo do Protótipo 1 — entregue (aguardando publicação).** A pedido explícito do CEO (D-035), a plataforma foi retonalizada para a aparência do Protótipo 1: sidebar escura, azul institucional (`#145DA8`) como marca, e a Home foi inteiramente reconstruída como dashboard clássico (KPI grid, gráfico de linha do Caixa, gráfico de barra de Multas, tabela de Próximos Vencimentos, Alertas, donut de Multas por órgão, Ações rápidas). Documentação, Multas e Caixa Particular convertidas para tabela + filtros. Isso reverte a sidebar clara (missão P025), D-010 (paleta petróleo/cobre) e D-027 (cards em vez de tabela) — decisão consciente, não correção de erro (ver D-035). A home-assistente das missões P029/P033/P034 foi removida (arquivos órfãos deletados; git preserva o histórico). Acumula P033 (Voz do Cliente — D-031) e P032 (D-030, publicada). Ainda sem backend, banco, autenticação ou integração.
+**Combustível e Equipe Operacional como experiências completas — entregue (aguardando publicação).** Combustível (D-036) ganhou o ciclo completo: registrar entrada, registrar abastecimento (base ou externo), estoque reativo na tela, histórico unificado, timeline em extrato e inteligência operacional. Equipe Operacional (D-037) virou um dos módulos mais completos da plataforma: dashboard de 8 indicadores, 4 ações (Novo Colaborador, Atestado, Falta, Férias), quadro de escala por equipe/turno, ficha do colaborador em painel lateral, calendário mensal, inteligência/alertas/atividade recente. Acumula o clone visual completo do Protótipo 1 (D-035, publicado): sidebar escura, azul institucional, Home como dashboard clássico, tabelas em Documentação/Multas/Caixa. Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
@@ -17,9 +17,9 @@
 | **Sub-navegação por abas** dentro de Gestão da Frota e Fechamento | ✅ Corrige regressão de cliques introduzida pelo hub-only da Missão 02 (D-019) |
 | Central de Operações (home) | ✅ Saudação conversacional, pendências priorizadas e fluxo visual dos 3 setores — cartões de estatística redundantes removidos (D-020) |
 | **Acionamento** | ✅ Quadro de chamados ativos por status; contagem duplicada removida (D-020) |
-| **Gestão da Frota** | ✅ Veículos, Documentação, Multas e **Combustível** (tanque da base + abastecimento externo, P033) reais; Vistorias/Compras como conceito futuro sinalizado |
+| **Gestão da Frota** | ✅ Veículos, Documentação, Multas e **Combustível** (ciclo completo: entrada, abastecimento base/externo, estoque reativo, inteligência — P036/D-036) reais; Vistorias/Compras como conceito futuro sinalizado |
 | **Fechamento** | ✅ Caixa Particular real; Conferência/Consolidação/Seguradoras como conceito visual, sem regra de negócio inventada (D-015) |
-| **Equipe Operacional** | ✅ Novo setor (P033): escala por turno, faltas/atestados com impacto na escala já calculado, disponibilidade da equipe |
+| **Equipe Operacional** | ✅ Módulo completo (P037/D-037): dashboard de 8 indicadores, 4 ações (colaborador/atestado/falta/férias), escala por equipe/turno, ficha do colaborador, calendário mensal, inteligência/alertas |
 | **Voz do Cliente** (`docs/BUSINESS/VOZ_DO_CLIENTE.md`) | ✅ Novo nesta missão — fonte oficial de requisitos reais, nunca exposta na interface (D-031) |
 | **Busca global** (placa, motorista ou chamado) | ✅ Nova nesta missão — resultado leva direto à tela certa (D-021) |
 | **Tema claro/escuro** | ✅ Novo nesta missão — alternável pelo usuário, tokens já existiam desde a Fase 1 (D-018) |
@@ -62,4 +62,4 @@ Acesse `http://localhost:3000`.
 
 ## Última atualização
 
-2026-07-15 — Clone visual completo do Protótipo 1 (D-035) entregue: sidebar escura, azul institucional, 3 gráficos SVG novos, tabela reintroduzida, Home/Documentação/Multas/Caixa Particular reconstruídas no padrão do protótipo. Build com 35 páginas, todas as rotas testadas via HTTP. Pendências seguem as mesmas de antes: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030).
+2026-07-16 — Missões P036 (Combustível — D-036) e P037 (Equipe Operacional — D-037) entregues: Combustível com ciclo completo de entrada/abastecimento e estoque reativo; Equipe Operacional com dashboard de 8 indicadores, escala por equipe/turno, ficha do colaborador e calendário. Build com 35 páginas, todas as rotas testadas via HTTP. Pendências seguem as mesmas de antes: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030).

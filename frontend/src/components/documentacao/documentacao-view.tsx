@@ -47,7 +47,7 @@ const GRUPOS = [
 ];
 
 /**
- * Documentação legal em tabela única e filtrável (P036, clone do
+ * Documentação legal em tabela única e filtrável (Clone do Protótipo 1, clone do
  * Protótipo 1 `documentos.html`) — substitui as 6+ planilhas espalhadas
  * (e o layout por cards da P027) por uma central de vencimentos.
  */

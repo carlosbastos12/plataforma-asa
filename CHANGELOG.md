@@ -142,3 +142,21 @@ A pedido explícito do CEO (D-035), reverte a sidebar clara da P025, D-010 e D-0
 - **Caixa Particular**: KPI grid + gráfico de fechamento diário + tabela de lançamentos + donut "por forma de pagamento", mantendo a seleção de dia e o fechamento com um toque já existentes.
 - Novo dataset ilustrativo isolado (`lib/dashboard-demo.ts`) só para dar forma aos gráficos de 30 dias/6 meses — não deriva de nem altera o dataset de negócio real (D-005).
 - Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas) e todas as rotas testadas via HTTP (200) com o dev server local.
+
+### Adicionado — Missão P036: Gestão Inteligente do Combustível (2026-07-16)
+`/gestao-da-frota/combustivel` (D-036) ganha o ciclo completo, com estoque reativo na tela (estado local, sem backend):
+- Botão **Registrar Entrada de Combustível** — modal com fornecedor, nº da NF, data, litros, valor total (calcula valor/litro ao vivo), tipo (Compra/Complemento/Ajuste de estoque), observações. Toast: "Entrada registrada. O estoque disponível foi atualizado automaticamente."
+- Botão **Registrar Abastecimento** — modal com veículo, motorista (preenchido automaticamente), data, odômetro, litros, origem (Tanque da Base/Posto Externo) com campos condicionais (posto, cidade, valor, forma de pagamento para externo). Toast: "Estoque atualizado automaticamente. Autonomia estimada recalculada para N dia(s)."
+- KPI grid respondendo as 4 perguntas da missão: quanto resta, como entra, como sai, quem abasteceu.
+- Tabela "Últimos abastecimentos" (base + externo unificados, com quem registrou e status), timeline "Movimentações do Estoque" em formato de extrato, painel "Inteligência Operacional" com leituras fictícias ancoradas no dado real.
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas), rotas testadas via HTTP.
+
+### Adicionado — Missão P037: Equipe Operacional como módulo demonstrativo (2026-07-16)
+`/equipe-operacional` (D-037) deixa de ser uma lista simples e vira um dos módulos mais completos da plataforma:
+- Dashboard com 8 indicadores: colaboradores ativos, em serviço, folga, férias, atestados, faltas, escalas abertas, precisa de substituição.
+- 4 ações — **Novo Colaborador**, **Registrar Atestado**, **Registrar Falta**, **Registrar Férias** — cada uma explicando o que faz e o benefício no tooltip; registrar atestado/férias já muda o status do colaborador na tela.
+- **Escala Operacional**: quadro com uma coluna por turno (Manhã/Tarde/Noite), um cartão por equipe (Alfa/Bravo/Charlie) mostrando Motorista/Operador/Apoio e status individual, com efetivo disponível em destaque.
+- **Ficha do colaborador** (painel lateral, abre ao clicar em qualquer nome): dados, histórico de ausências, histórico de escalas, documentação/treinamentos, observações.
+- **Calendário mensal**: folgas, férias, atestados, faltas, treinamentos e escalas no mesmo mapa, com detalhe do dia selecionado.
+- Painéis "Inteligência Operacional", "Atenção necessária" e "Atividade recente".
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas), rotas testadas via HTTP.

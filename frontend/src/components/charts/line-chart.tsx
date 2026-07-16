@@ -19,7 +19,7 @@ interface LineChartProps {
 }
 
 /**
- * Gráfico de linha em SVG puro (P036) — porta fiel do motor do Protótipo 1
+ * Gráfico de linha em SVG puro (Clone do Protótipo 1) — porta fiel do motor do Protótipo 1
  * (`assets/js/main.js`, `lineChart`): mesma matemática de grid, área e
  * pontos, agora responsivo via `ResizeObserver` em vez de leitura única.
  */

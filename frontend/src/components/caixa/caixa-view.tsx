@@ -28,7 +28,7 @@ const COR_FORMA: Record<string, string> = {
   Espécie: "var(--warning)",
 };
 
-/** Caixa Particular (P036, clone do Protótipo 1 `caixa.html`) — KPI + gráfico do mês + tabela de lançamentos + composição por forma de pagamento. */
+/** Caixa Particular (Clone do Protótipo 1, clone do Protótipo 1 `caixa.html`) — KPI + gráfico do mês + tabela de lançamentos + composição por forma de pagamento. */
 export function CaixaView() {
   const [selecionada, setSelecionada] = useState(CAIXA[0].data);
   const [fechadosNestaSessao, setFechadosNestaSessao] = useState<Set<string>>(new Set());

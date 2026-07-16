@@ -11,7 +11,7 @@ interface DonutChartProps {
   totalLabel?: string;
 }
 
-/** Gráfico de rosca em SVG puro (P036) — porta fiel do Protótipo 1 (`donutChart`). */
+/** Gráfico de rosca em SVG puro (Clone do Protótipo 1) — porta fiel do Protótipo 1 (`donutChart`). */
 export function DonutChart({ data, size = 168, stroke = 22, totalLabel = "total" }: DonutChartProps) {
   const r = (size - stroke) / 2;
   const cx = size / 2;

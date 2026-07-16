@@ -27,7 +27,7 @@ const COR_ORGAO: Record<string, string> = {
 };
 
 /**
- * Dashboard executivo (P036) — clone visual do Protótipo 1 a pedido do CEO:
+ * Dashboard executivo (Clone do Protótipo 1) — clone visual do Protótipo 1 a pedido do CEO:
  * KPI grid, gráficos e tabela de vencimentos substituem a home-assistente
  * das missões P029/P033/P034 (ver D-035 em DECISIONS.md).
  */

@@ -1,5 +1,5 @@
 /**
- * Séries ilustrativas dos gráficos do Dashboard (P036).
+ * Séries ilustrativas dos gráficos do Dashboard (Clone do Protótipo 1).
  *
  * Diferente do resto de `mock-data.ts`, estas séries não derivam de nenhuma
  * regra de negócio real — a base de Caixa Particular e Multas do produto

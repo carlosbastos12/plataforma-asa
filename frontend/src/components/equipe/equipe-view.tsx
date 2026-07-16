@@ -1,144 +1,110 @@
 "use client";
 
+import { useState } from "react";
+import { UserCheck2, Truck, Coffee, Palmtree, Stethoscope, UserX, ListChecks, UserCog } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PessoaAvatar } from "@/components/pessoa-avatar";
-import { formatarData } from "@/lib/mock-data";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { NovoColaboradorDialog } from "./novo-colaborador-dialog";
+import { RegistrarAusenciaDialog } from "./registrar-ausencia-dialog";
+import { EscalaBoard } from "./escala-board";
+import { InteligenciaEquipePanel, AlertasEquipePanel, TimelineEquipePanel } from "./inteligencia-equipe-panel";
+import { FichaColaboradorSheet } from "./ficha-colaborador-sheet";
+import { ListaColaboradores } from "./lista-colaboradores";
+import { CalendarioEquipe } from "./calendario-equipe";
 import {
   EQUIPE,
   AUSENCIAS,
-  ESCALA,
-  type StatusTurno,
-  type StatusColaborador,
+  quadroDeEscala,
+  insightsEquipe,
+  alertasEquipe,
+  turnosEmAberto,
+  timelineEquipe,
+  type Colaborador,
+  type Ausencia,
 } from "@/lib/equipe";
-import { cn } from "@/lib/utils";
-import { Clock3, UserCheck2, CircleAlert } from "lucide-react";
-
-const STATUS_TURNO: Record<StatusTurno, { rotulo: string; classe: string }> = {
-  confirmado: { rotulo: "Confirmado", classe: "bg-success-soft text-success" },
-  substituicao: { rotulo: "Substituição", classe: "bg-warning-soft text-warning" },
-  em_aberto: { rotulo: "Em aberto", classe: "bg-destructive-soft text-destructive" },
-};
-
-const STATUS_COLABORADOR: Record<StatusColaborador, { rotulo: string; classe: string }> = {
-  disponivel: { rotulo: "Disponível", classe: "bg-success-soft text-success" },
-  em_rota: { rotulo: "Em rota", classe: "bg-secondary text-secondary-foreground" },
-  ausente: { rotulo: "Ausente", classe: "bg-destructive-soft text-destructive" },
-  folga: { rotulo: "Folga", classe: "bg-muted text-muted-foreground" },
-};
 
 /**
- * Equipe Operacional (P033, VDC-001 dores 8/9/10): faltas, atestados e
- * escala controlados manualmente hoje. Aqui, uma ausência já mostra se
- * afeta a escala e quem cobre o turno — sem precisar cruzar duas listas.
+ * Equipe Operacional como módulo operacional, não "RH" (P037): uma falta,
+ * um atestado ou uma férias mudam a capacidade da empresa de atender
+ * chamados — cada peça da tela mostra essa ligação, não só o registro.
  */
 export function EquipeView() {
-  const diasEscala = Array.from(new Set(ESCALA.map((t) => t.data)));
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>(EQUIPE);
+  const [ausencias, setAusencias] = useState<Ausencia[]>(AUSENCIAS);
+  const [selecionado, setSelecionado] = useState<Colaborador | null>(null);
+
+  const quadro = quadroDeEscala(colaboradores);
+  const insights = insightsEquipe(colaboradores);
+  const alertas = alertasEquipe(colaboradores, ausencias);
+  const abertas = turnosEmAberto();
+
+  const ativos = colaboradores.length;
+  const emServico = colaboradores.filter((c) => c.status === "disponivel" || c.status === "em_rota").length;
+  const folga = colaboradores.filter((c) => c.status === "folga").length;
+  const ferias = colaboradores.filter((c) => c.status === "ferias").length;
+  const emAtestado = colaboradores.filter((c) => c.status === "ausente").length;
+  const faltas = ausencias.filter((a) => a.tipo === "falta").length;
+  const necessidadeSubstituicao = ausencias.filter((a) => a.impactaEscala && !a.substituto).length;
+
+  function registrarAusencia(a: Ausencia) {
+    setAusencias((atual) => [a, ...atual]);
+    if (a.tipo === "atestado" || a.tipo === "ferias") {
+      setColaboradores((atual) =>
+        atual.map((c) => (c.nome === a.colaborador ? { ...c, status: a.tipo === "atestado" ? "ausente" : "ferias" } : c))
+      );
+    }
+  }
 
   return (
-    <Tabs defaultValue="escala">
-      <TabsList>
-        <TabsTrigger value="escala">Escala</TabsTrigger>
-        <TabsTrigger value="ausencias">Faltas e atestados</TabsTrigger>
-        <TabsTrigger value="disponibilidade">Disponibilidade</TabsTrigger>
-      </TabsList>
+    <div className="flex flex-col gap-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+        <KpiCard icon={UserCheck2} tone="info" label="Colaboradores ativos" value={String(ativos)} />
+        <KpiCard icon={Truck} tone="ok" label="Em serviço" value={String(emServico)} />
+        <KpiCard icon={Coffee} tone="ok" label="Folga" value={String(folga)} />
+        <KpiCard icon={Palmtree} tone="warn" label="Férias" value={String(ferias)} />
+        <KpiCard icon={Stethoscope} tone="crit" label="Atestados" value={String(emAtestado)} />
+        <KpiCard icon={UserX} tone={faltas > 0 ? "warn" : "ok"} label="Faltas" value={String(faltas)} />
+        <KpiCard icon={ListChecks} tone={abertas.length > 0 ? "warn" : "ok"} label="Escalas abertas" value={String(abertas.length)} />
+        <KpiCard icon={UserCog} tone={necessidadeSubstituicao > 0 ? "crit" : "ok"} label="Precisa de substituição" value={String(necessidadeSubstituicao)} />
+      </section>
 
-      <TabsContent value="escala" className="mt-5 flex flex-col gap-5">
-        {diasEscala.map((data) => (
-          <div key={data} className="overflow-hidden rounded-2xl border border-border bg-card">
-            <div className="border-b border-border px-5 py-3">
-              <p className="text-sm font-semibold text-foreground">{formatarData(data)}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <NovoColaboradorDialog onRegistrar={(c) => setColaboradores((atual) => [...atual, c])} />
+        <RegistrarAusenciaDialog tipo="atestado" onRegistrar={registrarAusencia} />
+        <RegistrarAusenciaDialog tipo="falta" onRegistrar={registrarAusencia} />
+        <RegistrarAusenciaDialog tipo="ferias" onRegistrar={registrarAusencia} />
+      </div>
+
+      <Tabs defaultValue="visao-geral">
+        <TabsList>
+          <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
+          <TabsTrigger value="colaboradores">Colaboradores</TabsTrigger>
+          <TabsTrigger value="calendario">Calendário</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visao-geral" className="mt-4">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+            <div className="flex flex-col gap-4">
+              <EscalaBoard cartoes={quadro} onSelecionar={setSelecionado} />
+              <AlertasEquipePanel alertas={alertas} />
             </div>
-            <ul className="divide-y divide-border">
-              {ESCALA.filter((t) => t.data === data).map((t, i) => {
-                const st = STATUS_TURNO[t.status];
-                return (
-                  <li key={i} className="flex items-center gap-4 px-5 py-3.5 text-sm">
-                    <span className="flex w-16 shrink-0 items-center gap-1.5 text-muted-foreground">
-                      <Clock3 className="size-3.5" strokeWidth={2} />
-                      {t.turno}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-foreground">{t.colaborador}</span>
-                    <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", st.classe)}>
-                      {st.rotulo}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="flex flex-col gap-4">
+              <InteligenciaEquipePanel insights={insights} />
+              <TimelineEquipePanel atividades={timelineEquipe()} />
+            </div>
           </div>
-        ))}
-      </TabsContent>
+        </TabsContent>
 
-      <TabsContent value="ausencias" className="mt-5 flex flex-col gap-3">
-        {AUSENCIAS.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-12 text-center">
-            <div className="flex size-11 items-center justify-center rounded-full bg-success-soft text-success">
-              <UserCheck2 className="size-5" strokeWidth={2} />
-            </div>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Nenhuma falta ou atestado em aberto. Assim que uma ausência entrar, ela aparece aqui com o impacto na
-              escala já calculado.
-            </p>
-          </div>
-        ) : (
-          AUSENCIAS.map((a) => (
-            <div
-              key={a.id}
-              className={cn(
-                "flex flex-col gap-3 rounded-2xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between",
-                a.impactaEscala ? "border-warning/25 border-l-4 border-l-warning" : "border-border"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <PessoaAvatar nome={a.colaborador} papel="Colaborador" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {a.colaborador} · {a.tipo === "atestado" ? "Atestado" : "Falta"}
-                  </p>
-                  <p className="mt-0.5 text-[13px] text-muted-foreground">
-                    {a.motivo} · {formatarData(a.dataInicio)}
-                    {a.dataFim !== a.dataInicio ? ` a ${formatarData(a.dataFim)}` : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-[13px]">
-                {a.impactaEscala ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-3 py-1 font-medium text-warning">
-                    <CircleAlert className="size-3.5" strokeWidth={2.25} />
-                    {a.substituto ? `Coberto por ${a.substituto}` : "Ainda sem substituto"}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 font-medium text-success">
-                    Não afeta a escala
-                  </span>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </TabsContent>
+        <TabsContent value="colaboradores" className="mt-4">
+          <ListaColaboradores colaboradores={colaboradores} onSelecionar={setSelecionado} />
+        </TabsContent>
 
-      <TabsContent value="disponibilidade" className="mt-5">
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <ul className="divide-y divide-border">
-            {EQUIPE.map((c) => {
-              const st = STATUS_COLABORADOR[c.status];
-              return (
-                <li key={c.nome} className="flex items-center gap-4 px-5 py-3.5">
-                  <PessoaAvatar nome={c.nome} papel={c.funcao} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">{c.nome}</p>
-                    <p className="text-[13px] text-muted-foreground">{c.funcao}</p>
-                  </div>
-                  <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", st.classe)}>
-                    {st.rotulo}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="calendario" className="mt-4">
+          <CalendarioEquipe />
+        </TabsContent>
+      </Tabs>
+
+      <FichaColaboradorSheet colaborador={selecionado} onClose={() => setSelecionado(null)} />
+    </div>
   );
 }

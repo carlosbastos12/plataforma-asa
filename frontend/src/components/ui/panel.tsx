@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Painel no padrão do Protótipo 1 (P036): bloco branco, borda 1px, cabeçalho
+ * Painel no padrão do Protótipo 1 (Clone do Protótipo 1): bloco branco, borda 1px, cabeçalho
  * com título/subtítulo separado por linha, corpo com respiro — a unidade
  * estrutural repetida em quase toda tela do protótipo (`.panel`).
  */

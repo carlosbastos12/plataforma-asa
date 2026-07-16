@@ -6,7 +6,7 @@
 
 /* ===================================================================
    Plataforma-ASA — Design tokens
-   P036: paleta clonada do Protótipo 1 a pedido explícito do CEO — azul
+   Clone do Protótipo 1: paleta clonada do Protótipo 1 a pedido explícito do CEO — azul
    institucional (#145da8) como cor de marca, sidebar escura, tons
    crítico/atenção/ok/info nos hex exatos do protótipo. Substitui a
    paleta petróleo/cobre original (D-010) e a sidebar clara da P025 —
@@ -115,10 +115,10 @@
   --chart-4: #D0342C;
   --chart-5: #17A267;
   --radius: 0.75rem;
-  /* Elevação suave (P032, tons ajustados na P036 para a base neutra azulada
+  /* Elevação suave (P032, tons ajustados na Clone do Protótipo 1 para a base neutra azulada
      do Protótipo 1: rgba(15,27,45,·) em vez do neutro verde-petróleo). */
   --shadow-card: 0 1px 2px rgba(15, 27, 45, 0.06), 0 4px 16px rgba(15, 27, 45, 0.08);
-  /* Sidebar escura (P036 — clone do Protótipo 1, reverte a sidebar clara
+  /* Sidebar escura (Clone do Protótipo 1 — clone do Protótipo 1, reverte a sidebar clara
      da P025 a pedido explícito do CEO). */
   --sidebar: #0D1B2E;
   --sidebar-hover: #16283F;
