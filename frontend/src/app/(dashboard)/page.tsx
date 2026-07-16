@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, Wallet2, BarChart3, ShieldCheck, CalendarPlus, ArrowRight } from "lucide-react";
+import { AlertTriangle, Wallet2, BarChart3, ShieldCheck, CalendarPlus, ArrowRight, Fuel, Gauge, CalendarClock, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { Panel, PanelHeader, PanelBody } from "@/components/ui/panel";
@@ -14,6 +14,7 @@ import { NovaMultaButton } from "@/components/multas/nova-multa-button";
 import { CAIXA, formatarData, formatarMoeda } from "@/lib/mock-data";
 import { calcularIndicadores, proximosVencimentos, vencimentosCriticos, multasPorOrgao, leituraOperacional } from "@/lib/insights";
 import { CAIXA_ULTIMOS_30_DIAS, CAIXA_30_DIAS_LABELS, MULTAS_POR_MES } from "@/lib/dashboard-demo";
+import { estoqueAtualLitros, consumoMedioDiarioLitros, diasDeAutonomiaTanque, insightsCombustivel, MOVIMENTACOES_TANQUE } from "@/lib/combustivel";
 
 export const metadata: Metadata = {
   title: "Central de Operações",
@@ -41,6 +42,17 @@ export default function CentralDeOperacoesPage() {
   const totalCaixaMes = CAIXA.flatMap((c) => c.lancamentos).reduce((acc, l) => acc + l.valor, 0);
   const atendimentosMes = CAIXA.flatMap((c) => c.lancamentos).filter((l) => l.tipo === "entrada").length;
   const docsEmDiaPct = Math.round((i.frotaApta / i.frotaTotal) * 100);
+
+  const estoqueAtual = estoqueAtualLitros();
+  const consumoMedio = consumoMedioDiarioLitros();
+  const autonomia = diasDeAutonomiaTanque();
+  const consumidoNoPeriodo = MOVIMENTACOES_TANQUE.filter((m) => m.tipo === "saida").reduce((acc, m) => acc + m.litros, 0);
+  const proximaCompra = Math.max(autonomia - 2, 1);
+  const insightsFuel = insightsCombustivel();
+  const donutCombustivel = [
+    { label: "Diesel disponível", value: estoqueAtual, color: "var(--success)" },
+    { label: "Consumido no período", value: consumidoNoPeriodo, color: "var(--chart-3)" },
+  ];
 
   const ALERT_TOM: Record<string, { bg: string; fg: string }> = {
     critico: { bg: "bg-destructive-soft", fg: "text-destructive" },
@@ -80,6 +92,44 @@ export default function CentralDeOperacoesPage() {
           foot={`${docsEmDiaPct}% da frota regularizada`}
         />
       </section>
+
+      <Panel>
+        <PanelHeader
+          title="Combustível da Frota"
+          subtitle="Estoque do tanque da base e autonomia estimada, em tempo real"
+          action={
+            <Link href="/gestao-da-frota/combustivel" className="text-[12.5px] font-semibold text-primary">
+              Ver Combustível →
+            </Link>
+          }
+        />
+        <PanelBody className="flex flex-col gap-5">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <KpiCard icon={Fuel} tone={autonomia <= 3 ? "warn" : "ok"} label="Estoque atual" value={`${estoqueAtual.toLocaleString("pt-BR")} L`} foot="Tanque da base" />
+            <KpiCard icon={Gauge} tone="info" label="Consumo médio diário" value={`${consumoMedio.toLocaleString("pt-BR")} L`} foot="Média dos últimos registros" />
+            <KpiCard icon={CalendarClock} tone={autonomia <= 3 ? "crit" : "ok"} label="Autonomia estimada" value={`${autonomia} dias`} foot="No ritmo atual de consumo" />
+            <KpiCard icon={ShoppingCart} tone={proximaCompra <= 2 ? "warn" : "info"} label="Próxima compra recomendada" value={`${proximaCompra} dias`} foot="Para não zerar o estoque" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
+            <DonutChart data={donutCombustivel} totalLabel="litros no período" />
+            <div className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border">
+              {insightsFuel.map((insight, idx) => (
+                <div key={idx} className="flex items-start gap-3 px-4 py-3">
+                  <span
+                    className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg ${
+                      insight.atencao ? "bg-warning-soft text-warning" : "bg-success-soft text-success"
+                    }`}
+                  >
+                    <span className="size-2 rounded-full bg-current" />
+                  </span>
+                  <p className="text-[13px] leading-relaxed text-foreground">{insight.texto}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </PanelBody>
+      </Panel>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-4">

@@ -4,7 +4,7 @@
 
 ## Fase atual
 
-**Combustível e Equipe Operacional como experiências completas — entregue (aguardando publicação).** Combustível (D-036) ganhou o ciclo completo: registrar entrada, registrar abastecimento (base ou externo), estoque reativo na tela, histórico unificado, timeline em extrato e inteligência operacional. Equipe Operacional (D-037) virou um dos módulos mais completos da plataforma: dashboard de 8 indicadores, 4 ações (Novo Colaborador, Atestado, Falta, Férias), quadro de escala por equipe/turno, ficha do colaborador em painel lateral, calendário mensal, inteligência/alertas/atividade recente. Acumula o clone visual completo do Protótipo 1 (D-035, publicado): sidebar escura, azul institucional, Home como dashboard clássico, tabelas em Documentação/Multas/Caixa. Ainda sem backend, banco, autenticação ou integração.
+**Painel executivo de Combustível na Home — entregue (aguardando publicação).** A Central de Operações (D-039) ganhou a seção "Combustível da Frota" — 4 indicadores, gráfico de rosca e leituras inteligentes — para expor a maior dor de VDC-001 já na primeira tela, sem alterar nenhuma regra do módulo real de Combustível. Acumula: Combustível (D-036, ciclo completo de entrada/abastecimento/estoque reativo) e Equipe Operacional (D-037, dashboard/escala/calendário) como experiências completas; clone visual do Protótipo 1 (D-035, publicado): sidebar escura, azul institucional, Home como dashboard clássico, tabelas em Documentação/Multas/Caixa. Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
@@ -62,4 +62,4 @@ Acesse `http://localhost:3000`.
 
 ## Última atualização
 
-2026-07-16 — Missões P036 (Combustível — D-036) e P037 (Equipe Operacional — D-037) entregues: Combustível com ciclo completo de entrada/abastecimento e estoque reativo; Equipe Operacional com dashboard de 8 indicadores, escala por equipe/turno, ficha do colaborador e calendário. Build com 35 páginas, todas as rotas testadas via HTTP. Pendências seguem as mesmas de antes: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030).
+2026-07-16 — Missão P039 (Painel executivo de Combustível na Home — D-039) entregue: nova seção "Combustível da Frota" na Central de Operações, com 4 indicadores, gráfico de rosca e leituras inteligentes, consumindo exclusivamente dados já existentes em `lib/combustivel.ts` (D-036). Nenhuma outra tela alterada. Build com 35 páginas, rota `/` testada via HTTP. Pendências seguem as mesmas de antes: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030).

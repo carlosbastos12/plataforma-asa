@@ -151,6 +151,14 @@ A pedido explícito do CEO (D-035), reverte a sidebar clara da P025, D-010 e D-0
 - Tabela "Últimos abastecimentos" (base + externo unificados, com quem registrou e status), timeline "Movimentações do Estoque" em formato de extrato, painel "Inteligência Operacional" com leituras fictícias ancoradas no dado real.
 - Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas), rotas testadas via HTTP.
 
+### Adicionado — Missão P039: Painel executivo de Combustível na Home (2026-07-16)
+A Central de Operações (`/`) ganha a seção "Combustível da Frota" (D-039), entre o KPI grid do topo e o conteúdo existente:
+- 4 indicadores executivos (Estoque atual, Consumo médio diário, Autonomia estimada, Próxima compra recomendada), no mesmo `KpiCard` já usado no topo da Home.
+- Gráfico de rosca (`DonutChart`, já existente desde D-035) contrastando Diesel disponível × Consumido no período.
+- Lista de leituras inteligentes ao lado do gráfico, no padrão visual de "Alertas recentes" (ícone circular + texto), usando `insightsCombustivel()` sem alteração.
+- Nenhuma função nova em `lib/combustivel.ts`, nenhuma outra tela alterada — só consumo do que já existia (D-036).
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas) limpos; rota `/` testada via HTTP com os valores renderizados conferidos (6.310 L disponíveis, 810 L consumidos, 31 dias de autonomia, 29 dias para próxima compra — sem `NaN`/`undefined` visíveis).
+
 ### Adicionado — Missão P038: Runbook definitivo de publicação (2026-07-16)
 Diagnóstico fechado do padrão "Preview pronto, Produção presa" que se repetiu desde a P028 (D-038):
 - Novo [docs/DEPLOY.md](../docs/DEPLOY.md): diagnóstico, hipótese mais provável (Production Branch mal configurado), correção definitiva no painel da Vercel, processo manual enquanto isso não for corrigido, e explicação das duas URLs (Produção vs. Preview por branch, incluindo por que `ancoraplace` aparece no nome).
