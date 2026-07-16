@@ -4,7 +4,7 @@
 
 ## Fase atual
 
-**Missão P034 — Orientada à operação real — entregue (aguardando publicação).** Home remodelada por completo (D-032): dashboard executivo de 6 números, "Decidir agora" limitado a 3 itens com consequência+motivo+ação, "Tudo sob controle" e fluxo de 5 estações (Acionamento → Frota → Equipe → Combustível → Fechamento). Ficha do veículo agora abre no prontuário unificado; Gestão da Frota ganhou faixa de indicadores; Equipe Operacional ganhou banners de impacto por ausência; sidebar com contraste reduzido (D-033). Acumula P033 (Voz do Cliente — D-031), P032 (identidade visual — D-030, publicada), P031 (marca "ASA Reboques"), P030 (ecossistema — D-029) e P029 (onboarding — D-028). P029–P032 já publicadas; P033–P034 estão na árvore de trabalho, aguardando commit/push. Ainda sem backend, banco, autenticação ou integração.
+**Clone visual completo do Protótipo 1 — entregue (aguardando publicação).** A pedido explícito do CEO (D-035), a plataforma foi retonalizada para a aparência do Protótipo 1: sidebar escura, azul institucional (`#145DA8`) como marca, e a Home foi inteiramente reconstruída como dashboard clássico (KPI grid, gráfico de linha do Caixa, gráfico de barra de Multas, tabela de Próximos Vencimentos, Alertas, donut de Multas por órgão, Ações rápidas). Documentação, Multas e Caixa Particular convertidas para tabela + filtros. Isso reverte a sidebar clara (missão P025), D-010 (paleta petróleo/cobre) e D-027 (cards em vez de tabela) — decisão consciente, não correção de erro (ver D-035). A home-assistente das missões P029/P033/P034 foi removida (arquivos órfãos deletados; git preserva o histórico). Acumula P033 (Voz do Cliente — D-031) e P032 (D-030, publicada). Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
@@ -62,4 +62,4 @@ Acesse `http://localhost:3000`.
 
 ## Última atualização
 
-2026-07-15 — Missão P034 (Orientada à operação real) entregue: home remodelada (dashboard executivo, Decidir agora limitado a 3, fluxo de 5 estações), ficha do veículo como prontuário unificado, Gestão da Frota com faixa de indicadores, Equipe Operacional com banners de impacto, sidebar de contraste reduzido. Build com 35 páginas. Pendências documentadas: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030), ambas a revisar em rodada futura.
+2026-07-15 — Clone visual completo do Protótipo 1 (D-035) entregue: sidebar escura, azul institucional, 3 gráficos SVG novos, tabela reintroduzida, Home/Documentação/Multas/Caixa Particular reconstruídas no padrão do protótipo. Build com 35 páginas, todas as rotas testadas via HTTP. Pendências seguem as mesmas de antes: rastreabilidade de alterações (D-031) e fluxo "Despachar motorista" como inferência de demonstração (D-030).

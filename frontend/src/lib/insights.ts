@@ -183,6 +183,61 @@ export function veredictoVeiculo(v: Veiculo): Veredicto {
   };
 }
 
+/* ---------------- Painéis do Dashboard (P036) ---------------- */
+
+export interface VencimentoLinha {
+  placa: string;
+  documento: string;
+  vencimento: string;
+  dias: number;
+  status: DocStatus;
+}
+
+/** Próximos vencimentos entre toda a frota, ordenados por urgência. */
+export function proximosVencimentos(limite = 6): VencimentoLinha[] {
+  return FROTA.flatMap((v) =>
+    v.docs.map((d) => ({
+      placa: v.placa,
+      documento: d.tipo,
+      vencimento: d.vencimento,
+      dias: diasRestantes(d.vencimento),
+      status: statusVencimento(d.vencimento),
+    }))
+  )
+    .sort((a, b) => a.dias - b.dias)
+    .slice(0, limite);
+}
+
+/** Documentos que vencem em até `janela` dias (padrão 7), com detalhe por tipo. */
+export function vencimentosCriticos(janela = 7): { total: number; detalhe: string } {
+  const criticos = FROTA.flatMap((v) => v.docs)
+    .map((d) => ({ tipo: d.tipo, dias: diasRestantes(d.vencimento) }))
+    .filter((d) => d.dias <= janela);
+
+  const porTipo = new Map<string, number>();
+  for (const c of criticos) porTipo.set(c.tipo, (porTipo.get(c.tipo) ?? 0) + 1);
+  const detalhe = Array.from(porTipo.entries())
+    .map(([tipo, n]) => `${n} ${tipo}`)
+    .join(" · ");
+
+  return { total: criticos.length, detalhe: detalhe || "nenhum" };
+}
+
+/** Responsável fictício por tipo de documento — Logístico cuida de AET/Seguro/Tacógrafo, Administrativo de IPVA/Licenciamento. */
+export function responsavelDocumento(tipo: string): string {
+  if (tipo.includes("IPVA") || tipo === "Licenciamento") return "Administrativo — Gilvania";
+  return "Logístico — Roberto";
+}
+
+/** Multas de toda a frota agrupadas por órgão autuador. */
+export function multasPorOrgao(): { label: string; value: number }[] {
+  const contagem = new Map<string, number>();
+  for (const v of FROTA) {
+    for (const m of v.multas) contagem.set(m.orgao, (contagem.get(m.orgao) ?? 0) + 1);
+  }
+  return Array.from(contagem.entries()).map(([label, value]) => ({ label, value }));
+}
+
 /* ---------------- Leitura da operação (home como assistente) ---------------- */
 
 export type TomLeitura = "ok" | "atencao" | "critico";

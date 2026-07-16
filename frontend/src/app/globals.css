@@ -6,11 +6,11 @@
 
 /* ===================================================================
    Plataforma-ASA — Design tokens
-   Paleta própria: petróleo/teal profundo como cor de marca (evoca
-   confiança e operação noturna/rodoviária, sem cair no azul genérico
-   de SaaS), cobre queimado como destaque pontual, neutros levemente
-   frios. Tipografia: Geist (já nativa do Next.js) para tudo, variando
-   peso e escala — sem misturar famílias por modismo.
+   P036: paleta clonada do Protótipo 1 a pedido explícito do CEO — azul
+   institucional (#145da8) como cor de marca, sidebar escura, tons
+   crítico/atenção/ok/info nos hex exatos do protótipo. Substitui a
+   paleta petróleo/cobre original (D-010) e a sidebar clara da P025 —
+   ver D-035 em DECISIONS.md.
 =================================================================== */
 
 @theme inline {
@@ -57,6 +57,13 @@
   --color-destructive-soft: var(--destructive-soft);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-foreground: var(--brand-accent-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-muted-faint: var(--muted-faint);
+  --color-sidebar-hover: var(--sidebar-hover);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -67,70 +74,84 @@
 }
 
 :root {
-  --background: #F5F7F6;
-  --foreground: #10181A;
+  --background: #F4F6F9;
+  --foreground: #0F1B2D;
   --card: #FFFFFF;
-  --card-foreground: #10181A;
+  --card-foreground: #0F1B2D;
   --popover: #FFFFFF;
-  --popover-foreground: #10181A;
-  --primary: #0E5E52;
-  --primary-foreground: #F3FBF9;
-  --secondary: #EBF0EE;
-  --secondary-foreground: #12201D;
-  --muted: #EEF2F0;
-  --muted-foreground: #5D6E6A;
-  --accent: #E7EEEC;
-  --accent-foreground: #12201D;
-  --destructive: #B3261E;
-  --destructive-soft: #FBEAE8;
-  --success: #1E7A56;
+  --popover-foreground: #0F1B2D;
+  --primary: #145DA8;
+  --primary-hover: #0D3F75;
+  --primary-foreground: #FFFFFF;
+  --primary-soft: #E8F1FB;
+  --primary-glow: rgba(20, 93, 168, 0.16);
+  --secondary: #F9FAFB;
+  --secondary-foreground: #0F1B2D;
+  --muted: #F9FAFB;
+  --muted-foreground: #64748B;
+  --muted-faint: #94A3B8;
+  --accent: #E8F1FB;
+  --accent-foreground: #0D3F75;
+  --destructive: #D0342C;
+  --destructive-foreground: #FFFFFF;
+  --destructive-soft: #FBE6E4;
+  --success: #17A267;
   --success-foreground: #FFFFFF;
-  --success-soft: #E4F3EC;
-  --warning: #9C5B0A;
+  --success-soft: #E5F7EE;
+  --warning: #D98A10;
   --warning-foreground: #FFFFFF;
-  --warning-soft: #FBF0DD;
-  --brand-accent: #B6631A;
+  --warning-soft: #FDF1DD;
+  --info: #5B6BC0;
+  --info-foreground: #FFFFFF;
+  --info-soft: #ECEDF9;
+  --brand-accent: #D98A10;
   --brand-accent-foreground: #FFFFFF;
-  --border: #E1E7E4;
-  --input: #E1E7E4;
-  --ring: #0E5E52;
-  --chart-1: #0E5E52;
-  --chart-2: #B6631A;
-  --chart-3: #3E7C8C;
-  --chart-4: #8A9A6B;
-  --chart-5: #6B5B95;
+  --border: #E5E9F0;
+  --input: #E5E9F0;
+  --ring: #145DA8;
+  --chart-1: #145DA8;
+  --chart-2: #5B6BC0;
+  --chart-3: #D98A10;
+  --chart-4: #D0342C;
+  --chart-5: #17A267;
   --radius: 0.75rem;
-  /* Elevação suave constante (P032): toda superfície descansa sobre uma
-     sombra discreta, como no Protótipo 1 — profundidade sem peso. */
-  --shadow-card: 0 1px 2px rgba(16, 24, 26, 0.05), 0 4px 14px rgba(16, 24, 26, 0.05);
-  /* Sidebar clara: a moldura fica quieta, o conteúdo fala mais alto.
-     (O bloco escuro anterior era o elemento mais pesado da tela — P025.) */
-  --sidebar: #FBFCFC;
-  --sidebar-foreground: #10181A;
-  --sidebar-primary: #0E5E52;
-  --sidebar-primary-foreground: #F3FBF9;
-  --sidebar-accent: #EBF0EE;
-  --sidebar-accent-foreground: #12201D;
-  --sidebar-border: #E1E7E4;
-  --sidebar-ring: #0E5E52;
+  /* Elevação suave (P032, tons ajustados na P036 para a base neutra azulada
+     do Protótipo 1: rgba(15,27,45,·) em vez do neutro verde-petróleo). */
+  --shadow-card: 0 1px 2px rgba(15, 27, 45, 0.06), 0 4px 16px rgba(15, 27, 45, 0.08);
+  /* Sidebar escura (P036 — clone do Protótipo 1, reverte a sidebar clara
+     da P025 a pedido explícito do CEO). */
+  --sidebar: #0D1B2E;
+  --sidebar-hover: #16283F;
+  --sidebar-foreground: #B9C6D8;
+  --sidebar-primary: #145DA8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #16283F;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: #145DA8;
 }
 
 .dark {
-  --background: #0A1211;
-  --foreground: #E7EDEB;
-  --card: #101B19;
-  --card-foreground: #E7EDEB;
-  --popover: #101B19;
-  --popover-foreground: #E7EDEB;
-  --primary: #4FBFA8;
-  --primary-foreground: #06231D;
-  --secondary: #16231F;
-  --secondary-foreground: #E7EDEB;
-  --muted: #16231F;
-  --muted-foreground: #8FA6A0;
-  --accent: #182823;
-  --accent-foreground: #E7EDEB;
+  --background: #0A1420;
+  --foreground: #E7EDF5;
+  --card: #101C2E;
+  --card-foreground: #E7EDF5;
+  --popover: #101C2E;
+  --popover-foreground: #E7EDF5;
+  --primary: #4E9BE0;
+  --primary-hover: #79B4EA;
+  --primary-foreground: #06131F;
+  --primary-soft: #16283F;
+  --primary-glow: rgba(78, 155, 224, 0.2);
+  --secondary: #16233A;
+  --secondary-foreground: #E7EDF5;
+  --muted: #16233A;
+  --muted-foreground: #93A3BC;
+  --muted-faint: #6C7C96;
+  --accent: #16283F;
+  --accent-foreground: #E7EDF5;
   --destructive: #E2695F;
+  --destructive-foreground: #240A08;
   --destructive-soft: #301715;
   --success: #4FBF8F;
   --success-foreground: #06231D;
@@ -138,25 +159,29 @@
   --warning: #DBA24A;
   --warning-foreground: #241B08;
   --warning-soft: #2C2311;
-  --brand-accent: #D98A4A;
+  --info: #8B98E0;
+  --info-foreground: #101033;
+  --info-soft: #1C2040;
+  --brand-accent: #DBA24A;
   --brand-accent-foreground: #241505;
   --border: rgba(255, 255, 255, 0.09);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #4FBFA8;
-  --chart-1: #4FBFA8;
-  --chart-2: #D98A4A;
-  --chart-3: #6FA9BB;
-  --chart-4: #A9BB8C;
-  --chart-5: #9C8CC4;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
-  --sidebar: #0A1211;
-  --sidebar-foreground: #DCE6E3;
-  --sidebar-primary: #4FBFA8;
-  --sidebar-primary-foreground: #06231D;
-  --sidebar-accent: #16231F;
-  --sidebar-accent-foreground: #DCE6E3;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #4FBFA8;
+  --ring: #4E9BE0;
+  --chart-1: #4E9BE0;
+  --chart-2: #8B98E0;
+  --chart-3: #DBA24A;
+  --chart-4: #E2695F;
+  --chart-5: #4FBF8F;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --sidebar: #060C16;
+  --sidebar-hover: #101C2E;
+  --sidebar-foreground: #93A3BC;
+  --sidebar-primary: #4E9BE0;
+  --sidebar-primary-foreground: #06131F;
+  --sidebar-accent: #101C2E;
+  --sidebar-accent-foreground: #E7EDF5;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: #4E9BE0;
 }
 
 @layer base {

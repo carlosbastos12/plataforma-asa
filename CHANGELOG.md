@@ -130,3 +130,15 @@ Fontes revisadas: VOZ_DO_CLIENTE.md, DECISIONS.md, os dois protótipos internos 
 - **Combustível**: nota de prestação de contas na aba externa (posto/motorista/viagem/litros/valor já prontos, sem depender de recibo).
 - **Sidebar**: item ativo com contraste reduzido (texto colorido + fundo sutil, sem preenchimento sólido) — o conteúdo da página volta a ser o elemento mais forte da tela.
 - Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (35 páginas). Sem commit/push desta missão até a rodada de publicação.
+
+### Alterado — Clone visual completo do Protótipo 1 (2026-07-15)
+A pedido explícito do CEO (D-035), reverte a sidebar clara da P025, D-010 e D-027 na direção do Protótipo 1:
+- **Tokens**: paleta petróleo/cobre substituída pelo azul institucional `#145DA8` + tons crítico/atenção/ok/info nos hex exatos do protótipo; sidebar volta a ser escura (`#0D1B2E`).
+- **3 gráficos SVG novos** (`components/charts/`: linha, barra, rosca) — porta fiel do motor `assets/js/main.js` do protótipo, responsivos via `ResizeObserver`.
+- **Tabela reintroduzida** (`ui/table.tsx`, removida na P027) — usada no novo Dashboard, em Documentação, Multas e Caixa Particular.
+- **Home inteiramente reconstruída**: KPI grid (4 cards) → gráfico de Caixa (linha, 30 dias) → gráfico de Multas por mês (barra) → tabela de Próximos Vencimentos → coluna de Alertas recentes + Multas por órgão (rosca) + Ações rápidas. Substitui a home-assistente das P029/P033/P034 (`Greeting`, `LeituraOperacional`, `DecidirAgora`, `TudoSobControle`, `SectorFlow` — removidos, órfãos).
+- **Documentação**: abas por tipo (Todos/AET/IPVA-Licenciamento/Seguro/Tacógrafo) + filtros + tabela única, substitui `documentacao-por-urgencia.tsx`.
+- **Multas**: tabela + filtros + donut "por órgão" + ranking de motoristas por valor + fluxo de indicação, substitui `multas-cards.tsx`.
+- **Caixa Particular**: KPI grid + gráfico de fechamento diário + tabela de lançamentos + donut "por forma de pagamento", mantendo a seleção de dia e o fechamento com um toque já existentes.
+- Novo dataset ilustrativo isolado (`lib/dashboard-demo.ts`) só para dar forma aos gráficos de 30 dias/6 meses — não deriva de nem altera o dataset de negócio real (D-005).
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas) e todas as rotas testadas via HTTP (200) com o dev server local.

@@ -14,7 +14,7 @@ interface SidebarNavProps {
 
 function RotuloGrupo({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-4 mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
+    <p className="mt-4 mb-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
       {children}
     </p>
   );
@@ -42,27 +42,23 @@ function ItemNav({
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                // Contraste reduzido (P034): identidade por texto + traço fino,
-                // não por preenchimento sólido — o conteúdo da página continua
-                // sendo o elemento mais forte da tela, a sidebar só orienta.
-                "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
+                // Item ativo sólido (P036): clone do Protótipo 1
+                // (`.nav-item.active { background: var(--brand); color:#fff }`).
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors",
                 active
-                  ? "bg-primary/8 text-primary"
-                  : "text-sidebar-foreground/60 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground"
+                  ? "bg-primary text-white"
+                  : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-white"
               )}
             />
           }
         >
           <Icon
-            className={cn(
-              "size-[18px] shrink-0 transition-colors",
-              active ? "text-primary" : "text-sidebar-foreground/35 group-hover:text-sidebar-foreground/65"
-            )}
+            className={cn("size-[18px] shrink-0 transition-colors", active ? "text-white" : "text-sidebar-foreground/85 group-hover:text-white")}
             strokeWidth={2}
           />
           <span className="flex-1 truncate">{item.label}</span>
           {contagem && contagem.total > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive-soft px-1.5 text-[11px] font-semibold text-destructive">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white">
               {contagem.total}
             </span>
           )}
