@@ -151,6 +151,13 @@ A pedido explícito do CEO (D-035), reverte a sidebar clara da P025, D-010 e D-0
 - Tabela "Últimos abastecimentos" (base + externo unificados, com quem registrou e status), timeline "Movimentações do Estoque" em formato de extrato, painel "Inteligência Operacional" com leituras fictícias ancoradas no dado real.
 - Verificação: `eslint`, `tsc --noEmit`, `npm run build` (35 páginas), rotas testadas via HTTP.
 
+### Adicionado — Missão P038: Runbook definitivo de publicação (2026-07-16)
+Diagnóstico fechado do padrão "Preview pronto, Produção presa" que se repetiu desde a P028 (D-038):
+- Novo [docs/DEPLOY.md](../docs/DEPLOY.md): diagnóstico, hipótese mais provável (Production Branch mal configurado), correção definitiva no painel da Vercel, processo manual enquanto isso não for corrigido, e explicação das duas URLs (Produção vs. Preview por branch, incluindo por que `ancoraplace` aparece no nome).
+- Evidência nova que fecha o diagnóstico: a Produção só avançou para `bd292ee` entre a P035 e a P038 depois de promoção manual — nunca sozinha, confirmando que o gatilho automático não dispara.
+- Confirmado (de novo): o conector Vercel deste agente não enxerga o projeto `plataforma-asa` (só `loja-elaine`), por isso nenhuma missão anterior conseguiu inspecionar/corrigir a configuração diretamente.
+- Nenhum código de produto alterado — missão de infraestrutura/documentação.
+
 ### Adicionado — Missão P037: Equipe Operacional como módulo demonstrativo (2026-07-16)
 `/equipe-operacional` (D-037) deixa de ser uma lista simples e vira um dos módulos mais completos da plataforma:
 - Dashboard com 8 indicadores: colaboradores ativos, em serviço, folga, férias, atestados, faltas, escalas abertas, precisa de substituição.
