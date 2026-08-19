@@ -374,21 +374,6 @@ export function montarTarefasDoDia(): TarefaDoDia[] {
   return tarefas;
 }
 
-/**
- * Contagem "ao vivo" por setor, usada nos indicadores da navegação e no
- * fluxo da Central de Operações. Cada setor mede sua própria urgência:
- * Acionamento = chamados ainda sem despacho; Gestão da Frota = documentos/
- * multas críticos; Fechamento = caixas do dia ainda em aberto.
- */
-export function contarPendenciasPorSetor() {
-  const tarefas = montarTarefasDoDia();
-  return {
-    acionamento: CHAMADOS_ATIVOS.filter((c) => c.status === "aguardando").length,
-    gestaoDaFrota: tarefas.filter((t) => t.id.startsWith("doc-") || t.id.startsWith("multa-")).length,
-    fechamento: tarefas.filter((t) => t.id.startsWith("caixa-")).length,
-  };
-}
-
 /* ---------------- Parceiros/seguradoras (fictícios) ---------------- */
 
 export const PARCEIROS = [
@@ -399,37 +384,3 @@ export const PARCEIROS = [
   { nome: "Rumo Certo Assistência", atendimentos: 12, valor: 3260 },
 ];
 
-/* ---------------- Acionamento: chamados ativos (Missão 02) ----------------
-   Setor responsável por receber o chamado, localizar motorista, despachar
-   e acompanhar a execução. Dado fictício, criado do zero para esta missão —
-   não deriva de nenhum registro da Auditoria-ASA. */
-
-export type StatusChamado = "aguardando" | "despachado" | "em_atendimento" | "concluido";
-
-export interface ChamadoAtivo {
-  id: string;
-  cliente: string;
-  tipoServico: string;
-  origem: string;
-  placa: string | null;
-  motorista: string | null;
-  status: StatusChamado;
-  horaAbertura: string;
-}
-
-export const CHAMADOS_ATIVOS: ChamadoAtivo[] = [
-  { id: "CH-3141", cliente: "Zurique Proteção", tipoServico: "Reboque", origem: "BR-116, km 12", placa: "RDX4A17", motorista: "Renê Salgado", status: "em_atendimento", horaAbertura: "08:12" },
-  { id: "CH-3142", cliente: "Particular", tipoServico: "Pane elétrica", origem: "Av. Litorânea, 480", placa: "TCV3B29", motorista: "Denise Coutinho", status: "em_atendimento", horaAbertura: "08:47" },
-  { id: "CH-3143", cliente: "Vetor Seguradora", tipoServico: "Remoção", origem: "Rua das Acácias, 210", placa: "BLN2C88", motorista: "Otávio Bezerra", status: "despachado", horaAbertura: "09:05" },
-  { id: "CH-3144", cliente: "Particular", tipoServico: "Troca de pneu", origem: "Anel Viário, km 4", placa: null, motorista: null, status: "aguardando", horaAbertura: "09:21" },
-  { id: "CH-3145", cliente: "Alto Mar Seguros", tipoServico: "Reboque", origem: "Av. Beira Rio, 1200", placa: null, motorista: null, status: "aguardando", horaAbertura: "09:33" },
-  { id: "CH-3146", cliente: "Constância Seguros", tipoServico: "Chaveiro", origem: "Praça Central, s/n", placa: "JMT2P74", motorista: "Lívia Nunes", status: "concluido", horaAbertura: "07:40" },
-  { id: "CH-3147", cliente: "Particular", tipoServico: "Pane seca", origem: "Rod. do Contorno, km 8", placa: "HQF6K05", motorista: "Iolanda Prado", status: "concluido", horaAbertura: "07:15" },
-];
-
-export const STATUS_CHAMADO_LABEL: Record<StatusChamado, string> = {
-  aguardando: "Aguardando despacho",
-  despachado: "Despachado",
-  em_atendimento: "Em atendimento",
-  concluido: "Concluído",
-};

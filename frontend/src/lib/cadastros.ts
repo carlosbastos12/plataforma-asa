@@ -77,7 +77,7 @@ export const CADASTROS: Cadastro[] = [
     resumo: "Quem dirige cada veículo, com CNH e validade sempre à vista.",
     oQueFaz: "Registra cada motorista, a categoria da CNH e o veículo pelo qual responde.",
     problemaResolve: "Descobrir tarde demais que uma habilitação venceu ou que ninguém responde por um veículo.",
-    quemUtiliza: "Acionamento (para despachar) e frota (para documentos e multas).",
+    quemUtiliza: "Frota, para documentos e multas.",
     beneficio: "A indicação de condutor em multas sai na hora — a pessoa certa, sem procurar.",
     rotuloNovo: "Novo motorista",
     itens: MOTORISTAS,
@@ -101,7 +101,7 @@ export const CADASTROS: Cadastro[] = [
     resumo: "Oficinas e apoios que mantêm a operação rodando.",
     oQueFaz: "Cadastra oficinas, guinchos de apoio e demais parceiros operacionais.",
     problemaResolve: "Depender da memória para saber quem chamar quando um veículo precisa de socorro ou serviço.",
-    quemUtiliza: "Frota e acionamento.",
+    quemUtiliza: "Frota.",
     beneficio: "O contato certo aparece junto da necessidade — sem caçar telefone.",
     rotuloNovo: "Nova parceira",
     itens: [
@@ -192,7 +192,6 @@ export const CADASTROS: Cadastro[] = [
     itens: [
       { titulo: "Carlos", subtitulo: "Diretoria · acesso completo", badge: "ativo" },
       { titulo: "Márcia Leal", subtitulo: "Fechamento · caixa e conferência", badge: "ativo" },
-      { titulo: "Tiago Furtado", subtitulo: "Acionamento · chamados e despacho", badge: "ativo" },
       { titulo: "Berenice Prado", subtitulo: "Gestão da Frota · documentos e multas", badge: "ativo" },
     ],
   },

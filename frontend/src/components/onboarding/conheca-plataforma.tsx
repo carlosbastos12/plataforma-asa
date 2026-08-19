@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
-  Radio,
   Truck,
   Landmark,
   LayoutGrid,
@@ -39,12 +38,6 @@ interface Setor {
 
 const SETORES: Setor[] = [
   {
-    icon: Radio,
-    nome: "Acionamento",
-    oQueFaz: "Recebe cada chamado, mostra quem espera há mais tempo e despacha o motorista certo.",
-    beneficio: "O cliente passa menos tempo parado na estrada — e ninguém fica esquecido na fila.",
-  },
-  {
     icon: Truck,
     nome: "Gestão da Frota",
     oQueFaz: "Acompanha veículos, documentos e multas, com todos os prazos em contagem regressiva.",
@@ -62,7 +55,7 @@ const TRABALHA_ANTES = [
   "Prazos entram em contagem regressiva antes de vencer — o aviso chega a tempo de agir.",
   "Cada veículo tem um veredicto claro: pode operar hoje? Se não, o que o libera.",
   "Todo botão explica o que faz e o que evita — nada exige treinamento.",
-  "A busca no topo encontra qualquer placa, motorista ou chamado em segundos.",
+  "A busca no topo encontra qualquer placa ou motorista em segundos.",
 ];
 
 const AO_ENTRAR = [
@@ -103,8 +96,8 @@ function ConteudoEtapa({ etapa }: { etapa: number }) {
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Uma plataforma feita sob medida para a operação do ASA Reboques: o acionamento, a frota e o
-          fechamento do dia, finalmente no mesmo lugar.
+          Uma plataforma feita sob medida para a operação do ASA Reboques: a frota e o fechamento do dia,
+          finalmente no mesmo lugar.
         </p>
         <div className="flex flex-col gap-2 rounded-xl border border-border bg-secondary/40 p-4 text-sm font-medium text-foreground">
           <span>Menos retrabalho.</span>
@@ -120,7 +113,7 @@ function ConteudoEtapa({ etapa }: { etapa: number }) {
     return (
       <div className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">
-          Todo atendimento percorre três setores. Toque em cada um para ver o que ele resolve:
+          A operação passa por estes setores. Toque em cada um para ver o que ele resolve:
         </p>
         <div className="flex flex-wrap gap-2">
           {SETORES.map((s) => (
@@ -161,7 +154,7 @@ function ConteudoEtapa({ etapa }: { etapa: number }) {
         <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
           <LayoutGrid className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2.25} />
           <p className="text-[13px] leading-relaxed text-foreground">
-            <span className="font-semibold">A Central de Operações reúne os três.</span>{" "}
+            <span className="font-semibold">A Central de Operações reúne todos.</span>{" "}
             Ao abrir a plataforma, você já sabe como está a operação — sem percorrer tela por tela.
           </p>
         </div>

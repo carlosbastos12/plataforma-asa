@@ -4,6 +4,20 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Removido — Missão P040: Remoção completa do módulo Acionamento (2026-08-19)
+Auditoria geral do estado do projeto seguida da remoção definitiva do setor Acionamento (D-040), a pedido explícito do CEO — não faz parte do escopo da Plataforma-ASA:
+- **Excluídos:** `src/app/(dashboard)/acionamento/` (rota) e `src/components/acionamento/` (`ChamadosBoard`).
+- **`lib/mock-data.ts`**: removidos `CHAMADOS_ATIVOS`, `StatusChamado`, `ChamadoAtivo`, `STATUS_CHAMADO_LABEL` e a função órfã `contarPendenciasPorSetor` (sem nenhum chamador desde o clone visual do Protótipo 1, D-035).
+- **`lib/insights.ts`**: removidos o indicador `chamadosAguardando`, a entrada `/acionamento` em `contagensDaNavegacao()` e o card "chamados aguardando" em `indicadoresExecutivos()`.
+- **Navegação**: item "Acionamento" removido da sidebar (`nav-items.ts`).
+- **Busca global**: busca por "chamado" removida (`global-search.tsx`) — busca agora só por placa/motorista.
+- **Onboarding**: etapa "Acionamento" removida de "Conheça a Plataforma" (`conheca-plataforma.tsx`), textos ajustados para os setores restantes.
+- **Relatórios**: card "Relatório Operacional" removido (`relatorio-card.tsx`) — era específico de volume de despacho/chamados.
+- **Cadastros**: textos de `quemUtiliza` que citavam Acionamento ajustados; usuário fictício "Tiago Furtado" (cujo papel só existia por causa do setor) removido de `lib/cadastros.ts`.
+- **Documentação**: `PROJECT_STATE.md` e `ROADMAP.md` atualizados para refletir o estado atual; candidato "Aprofundar o setor Acionamento" removido do roadmap (decisão foi a oposta).
+- Nenhuma funcionalidade compartilhada com outros setores foi alterada.
+- Verificação: `eslint`, `tsc --noEmit` e `npm run build` limpos (34 páginas). Rota `/acionamento` confirmada 404 via HTTP; `/`, `/gestao-da-frota`, `/fechamento`, `/equipe-operacional`, `/cadastros` e `/relatorios` confirmadas 200.
+
 ### Adicionado — Sprint Zero (2026-07-14)
 - Início oficial do projeto **Plataforma-ASA**, separado da Auditoria-ASA (que passa a existir apenas como base de conhecimento, somente-leitura).
 - Estrutura de pastas: `docs/`, `frontend/`, `assets/`, `prototipos/`, `pesquisas/`, `referencias/`, `scripts/`.

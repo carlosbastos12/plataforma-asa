@@ -17,13 +17,17 @@ Primeira versão real do frontend (Next.js), com 5 telas organizadas por módulo
 
 A organização por módulo foi substituída por organização **por setor real da ASA**: Acionamento, Gestão da Frota e Fechamento. A Central de Operações passou a incluir um fluxo visual conectando os três setores na ordem real da operação. Ver [PROJECT_STATE.md](PROJECT_STATE.md) para o detalhamento.
 
+## Missão P040 — Remoção do setor Acionamento (concluída)
+
+O setor **Acionamento** (quadro de chamados simulado) foi removido por completo da plataforma — não faz parte do escopo da Plataforma-ASA. Ver D-040 em [DECISIONS.md](DECISIONS.md).
+
 ## Próxima missão (proposta, a validar com o PM)
 
-Candidatos identificados ao longo da Missão 02, em ordem sugerida:
+Candidatos identificados ao longo das últimas missões, em ordem sugerida:
 
-1. **Entender o processo real de Fechamento** com a equipe ASA (conferência de serviços, consolidação, relacionamento com seguradoras) — hoje é só conceito visual (D-015); é a maior lacuna de conhecimento do produto.
-2. **Aprofundar o setor Acionamento** — hoje é um quadro de chamados simulado; decidir se e como ele deveria refletir o que o AUTEM já faz, sem duplicar esforço.
-3. **Cofre de Credenciais** — risco de segurança já identificado na auditoria (senhas em texto plano), ainda não representado na plataforma.
+1. **Gestão Financeira / Contas a Pagar** — próxima frente de produto, a iniciar após a auditoria geral desta missão (P040).
+2. **Entender o processo real de Fechamento** com a equipe ASA (conferência de serviços, consolidação, relacionamento com seguradoras) — hoje é só conceito visual (D-015); é a maior lacuna de conhecimento do produto.
+3. **Cofre de Credenciais** — risco de segurança já identificado na auditoria (senhas em texto plano), ainda não representado na plataforma (destacado novamente em D-034).
 4. Validação com a diretoria da arquitetura por setor antes de qualquer decisão de backend.
 
 ## Fase 3 — Primeira versão real (futura, não iniciar sem aprovação explícita)

@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Truck, Radio } from "lucide-react";
+import { Search, Truck } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FROTA, CHAMADOS_ATIVOS } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import { FROTA } from "@/lib/mock-data";
 
 interface Resultado {
-  tipo: "veiculo" | "chamado";
+  tipo: "veiculo";
   titulo: string;
   subtitulo: string;
   href: string;
@@ -75,16 +74,7 @@ export function GlobalSearch() {
       href: `/gestao-da-frota/veiculos/${v.placa}`,
     }));
 
-    const chamados: Resultado[] = CHAMADOS_ATIVOS.filter(
-      (c) => c.id.toLowerCase().includes(termo) || c.cliente.toLowerCase().includes(termo)
-    ).map((c) => ({
-      tipo: "chamado",
-      titulo: c.id,
-      subtitulo: `${c.tipoServico} · ${c.cliente}`,
-      href: "/acionamento",
-    }));
-
-    return [...veiculos, ...chamados].slice(0, 6);
+    return veiculos.slice(0, 6);
   }, [debouncedQuery]);
 
   function irPara(href: string) {
@@ -105,7 +95,7 @@ export function GlobalSearch() {
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Buscar placa, motorista ou chamado..."
+        placeholder="Buscar placa ou motorista..."
         className="h-9 w-full rounded-lg border border-border bg-secondary/40 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:bg-card focus:outline-none"
       />
       <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-card px-1.5 font-mono text-[11px] text-muted-foreground lg:block">
@@ -145,13 +135,8 @@ export function GlobalSearch() {
                       onClick={() => irPara(r.href)}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-secondary/50"
                     >
-                      <span
-                        className={cn(
-                          "flex size-8 shrink-0 items-center justify-center rounded-lg",
-                          r.tipo === "veiculo" ? "bg-primary/12 text-primary" : "bg-[var(--chart-3)]/15 text-[var(--chart-3)]"
-                        )}
-                      >
-                        {r.tipo === "veiculo" ? <Truck className="size-4" /> : <Radio className="size-4" />}
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                        <Truck className="size-4" />
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium text-foreground">{r.titulo}</span>

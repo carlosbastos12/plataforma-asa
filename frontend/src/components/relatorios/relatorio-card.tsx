@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Eye, Radio, FileCheck2, ShieldAlert, Wrench, Fuel, Landmark } from "lucide-react";
+import { FileText, Eye, FileCheck2, ShieldAlert, Wrench, Fuel, Landmark } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -76,20 +76,6 @@ export function RelatorioCard({ relatorio }: { relatorio: Relatorio }) {
 
 /** Conteúdo dos relatórios (client): os ícones vivem aqui para não cruzarem a fronteira server → client. */
 const RELATORIOS: Relatorio[] = [
-  {
-    slug: "operacional",
-    nome: "Relatório Operacional",
-    icone: Radio,
-    oQueMostra: "Atendimentos do período: volume por dia, tempo médio de despacho e origem dos chamados.",
-    paraQuem: "direção e acionamento",
-    beneficio: "Mostra se a operação está dando conta da demanda — antes do cliente reclamar.",
-    exemplo: [
-      { rotulo: "Atendimentos no período", valor: "128" },
-      { rotulo: "Tempo médio até o despacho", valor: "11 min" },
-      { rotulo: "Origem mais frequente", valor: "Seguradoras (62%)" },
-      { rotulo: "Dia de maior volume", valor: "Sexta-feira" },
-    ],
-  },
   {
     slug: "documentacao",
     nome: "Relatório de Documentação",

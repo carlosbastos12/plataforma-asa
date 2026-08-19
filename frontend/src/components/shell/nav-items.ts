@@ -1,4 +1,4 @@
-import { LayoutGrid, Radio, Truck, Landmark, FolderOpen, FileText, Settings, Users2 } from "lucide-react";
+import { LayoutGrid, Truck, Landmark, FolderOpen, FileText, Settings, Users2 } from "lucide-react";
 
 export interface NavChild {
   href: string;
@@ -27,15 +27,6 @@ export const NAV_ITEMS: NavItem[] = [
     description: "O que precisa da sua atenção hoje",
     pergunta: "Como está a minha operação hoje?",
     beneficio: "Abra o dia já sabendo por onde começar — sem percorrer tela por tela.",
-  },
-  {
-    href: "/acionamento",
-    label: "Acionamento",
-    icon: Radio,
-    description: "Chamados, despacho e atendimentos ativos",
-    pergunta: "Quem precisa da minha atenção agora?",
-    beneficio: "Cliente atendido mais rápido — a fila fica visível e ninguém é esquecido.",
-    accent: "info",
   },
   {
     href: "/gestao-da-frota",

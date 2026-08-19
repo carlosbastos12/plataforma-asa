@@ -10,7 +10,6 @@
 import {
   FROTA,
   CAIXA,
-  CHAMADOS_ATIVOS,
   situacaoVeiculo,
   statusVencimento,
   diasRestantes,
@@ -65,7 +64,6 @@ export interface Indicadores {
   veiculosCriticos: number;
   docsVencidos: number;
   docsVencendo: number;
-  chamadosAguardando: number;
   /** Saldo do dia mais recente do caixa. */
   saldoDoDia: number;
   caixasEmAberto: number;
@@ -87,7 +85,6 @@ export function calcularIndicadores(): Indicadores {
     veiculosCriticos: criticos,
     docsVencidos: docs.filter((s) => s === "critico").length,
     docsVencendo: docs.filter((s) => s === "atencao").length,
-    chamadosAguardando: CHAMADOS_ATIVOS.filter((c) => c.status === "aguardando").length,
     saldoDoDia: saldo,
     caixasEmAberto: CAIXA.filter((c) => c.status === "aberto").length,
   };
@@ -107,10 +104,6 @@ export interface ContagemSetor {
 export function contagensDaNavegacao(): Record<string, ContagemSetor> {
   const i = calcularIndicadores();
   return {
-    "/acionamento": {
-      total: i.chamadosAguardando,
-      explicacao: `${i.chamadosAguardando} chamado(s) aguardando despacho`,
-    },
     "/gestao-da-frota": {
       total: i.docsVencidos + i.multasAguardando,
       explicacao: `${i.docsVencidos} documento(s) vencido(s) + ${i.multasAguardando} multa(s) aguardando indicação`,
@@ -333,7 +326,7 @@ export interface CardExecutivo {
 }
 
 /**
- * Os seis números que a diretoria olha antes de qualquer lista — cada um
+ * Os cinco números que a diretoria olha antes de qualquer lista — cada um
  * responde por si só "está tudo bem nessa frente?" (P034).
  */
 export function indicadoresExecutivos(): CardExecutivo[] {
@@ -376,13 +369,6 @@ export function indicadoresExecutivos(): CardExecutivo[] {
       valor: `${disponiveis}/${EQUIPE.length}`,
       detalhe: "pronta para escala hoje",
       tom: disponiveis >= EQUIPE.length - 1 ? "ok" : "neutro",
-    },
-    {
-      href: "/acionamento",
-      rotulo: "chamados aguardando",
-      valor: String(i.chamadosAguardando),
-      detalhe: "esperando despacho de motorista",
-      tom: i.chamadosAguardando > 2 ? "atencao" : "ok",
     },
   ];
 }
