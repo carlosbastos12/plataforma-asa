@@ -81,21 +81,26 @@ etapa(1, "Schema aplicado no banco");
 
 const TABELAS = ["perfis", "classificacoes", "estabelecimentos", "bancos", "fornecedores", "contas", "parcelas", "pagamentos", "documentos", "historico_alteracoes"];
 
+// IMPORTANTE: usar GET (nunca HEAD) para checar existência de tabela.
+// HEAD não tem corpo de resposta por definição HTTP — um 404 PGRST205
+// (tabela inexistente) chega sem `error` populado corretamente em algumas
+// versões do cliente, mascarando o erro e fazendo esta checagem passar
+// mesmo quando a tabela não existe. Já aconteceu uma vez neste projeto.
 let schemaOk = true;
 for (const t of TABELAS) {
-  const { error } = await anon.from(t).select("*", { head: true, count: "exact" });
-  // Tabela inexistente => PGRST205. Tabela existente com RLS bloqueando => sem erro.
-  if (error && /PGRST205|does not exist|schema cache/i.test(`${error.code} ${error.message}`)) {
-    erro(`tabela "${t}"`, "não existe — migration não aplicada");
+  const { error } = await anon.from(t).select("id").limit(1);
+  if (error) {
+    const inexistente = /PGRST205|does not exist|schema cache/i.test(`${error.code} ${error.message}`);
+    erro(`tabela "${t}"`, inexistente ? "não existe — migration não aplicada" : error.message);
     schemaOk = false;
   } else {
     ok(`tabela "${t}"`);
   }
 }
 
-const { error: erroView } = await anon.from("vw_parcelas_completo").select("*", { head: true });
-if (erroView && /PGRST205|does not exist/i.test(`${erroView.code} ${erroView.message}`)) {
-  erro("view vw_parcelas_completo", "não existe");
+const { error: erroView } = await anon.from("vw_parcelas_completo").select("parcela_id").limit(1);
+if (erroView) {
+  erro("view vw_parcelas_completo", erroView.message);
   schemaOk = false;
 } else {
   ok("view vw_parcelas_completo");
