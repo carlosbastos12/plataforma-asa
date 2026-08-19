@@ -12,6 +12,8 @@ interface Props {
   aoMudar: (f: FiltrosContas) => void;
   classificacoes: string[];
   estabelecimentos: string[];
+  /** Contas particulares não pertencem a filial da empresa — o filtro não faz sentido lá. */
+  mostrarEstabelecimento?: boolean;
 }
 
 const STATUS: (StatusParcela | "todos")[] = [
@@ -23,7 +25,13 @@ const STATUS: (StatusParcela | "todos")[] = [
   "parcialmente_paga",
 ];
 
-export function FiltrosContasBar({ filtros, aoMudar, classificacoes, estabelecimentos }: Props) {
+export function FiltrosContasBar({
+  filtros,
+  aoMudar,
+  classificacoes,
+  estabelecimentos,
+  mostrarEstabelecimento = true,
+}: Props) {
   const ativos = filtrosAtivos(filtros);
   const set = (parcial: Partial<FiltrosContas>) => aoMudar({ ...filtros, ...parcial });
 
@@ -67,19 +75,21 @@ export function FiltrosContasBar({ filtros, aoMudar, classificacoes, estabelecim
           </SelectContent>
         </Select>
 
-        <Select value={filtros.estabelecimento} onValueChange={(v) => set({ estabelecimento: v ?? "todos" })}>
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos estabelecimentos</SelectItem>
-            {estabelecimentos.map((e) => (
-              <SelectItem key={e} value={e}>
-                {e}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {mostrarEstabelecimento && (
+          <Select value={filtros.estabelecimento} onValueChange={(v) => set({ estabelecimento: v ?? "todos" })}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos estabelecimentos</SelectItem>
+              {estabelecimentos.map((e) => (
+                <SelectItem key={e} value={e}>
+                  {e}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

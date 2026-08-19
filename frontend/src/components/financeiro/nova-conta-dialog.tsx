@@ -98,6 +98,20 @@ export function NovaContaDialog({
   const valorNum = Number(valor.replace(",", ".")) || 0;
   const nParcelas = Math.max(Number(qtdParcelas) || 1, 1);
 
+  /**
+   * Estabelecimento é onde a despesa da EMPRESA está vinculada (Matriz,
+   * filiais). Uma despesa pessoal não pertence a nenhuma filial da ASA —
+   * por isso o campo some para conta particular, e o valor já escolhido é
+   * descartado: sem isso, quem selecionasse a filial antes de marcar
+   * "Particular" gravaria um vínculo invisível na tela.
+   */
+  const usaEstabelecimento = natureza !== "particular";
+
+  function escolherNatureza(nova: NaturezaConta) {
+    setNatureza(nova);
+    if (nova === "particular") setEstabelecimentoId("");
+  }
+
   const gruposClassificacao = useMemo(() => {
     const mapa = new Map<string, Classificacao[]>();
     for (const c of classificacoes) {
@@ -184,7 +198,9 @@ export function NovaContaDialog({
         fornecedorCnpj,
         numeroDocumento,
         dataDocumento,
-        estabelecimentoId,
+        // Garantia no ponto de envio: conta particular nunca leva vínculo
+        // com filial da empresa, mesmo que o estado tenha sobrado de antes.
+        estabelecimentoId: usaEstabelecimento ? estabelecimentoId : "",
         classificacaoId,
         formaPagamento,
         observacoes,
@@ -242,7 +258,7 @@ export function NovaContaDialog({
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => setNatureza("empresa")}
+              onClick={() => escolherNatureza("empresa")}
               className={cn(
                 "flex items-center gap-2.5 rounded-xl border p-3 text-left transition-colors",
                 natureza === "empresa"
@@ -260,7 +276,7 @@ export function NovaContaDialog({
             <button
               type="button"
               disabled={!podeParticular}
-              onClick={() => setNatureza("particular")}
+              onClick={() => escolherNatureza("particular")}
               className={cn(
                 "flex items-center gap-2.5 rounded-xl border p-3 text-left transition-colors",
                 natureza === "particular"
@@ -439,21 +455,23 @@ export function NovaContaDialog({
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className={rotuloCampo}>Estabelecimento</label>
-            <Select value={estabelecimentoId} onValueChange={(v) => setEstabelecimentoId(v ?? "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Onde a despesa pertence" />
-              </SelectTrigger>
-              <SelectContent>
-                {estabelecimentos.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {usaEstabelecimento && (
+            <div className="flex flex-col gap-1.5">
+              <label className={rotuloCampo}>Estabelecimento</label>
+              <Select value={estabelecimentoId} onValueChange={(v) => setEstabelecimentoId(v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Onde a despesa pertence" />
+                </SelectTrigger>
+                <SelectContent>
+                  {estabelecimentos.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <label className={rotuloCampo}>Forma de pagamento prevista</label>

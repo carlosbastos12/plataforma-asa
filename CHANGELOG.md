@@ -4,6 +4,12 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Alterado — Missão P043: Estabelecimento só em conta Empresa (2026-08-19)
+Cadastro de conta particular fica mais direto (D-043) — apenas interface, nenhuma alteração de banco, migration, RLS ou permissão:
+- Campo **Estabelecimento** some quando a natureza é **Particular** (no cadastro e no filtro da aba de particulares); segue igual para conta Empresa, com as filiais reais.
+- O estabelecimento eventualmente já escolhido é descartado ao marcar "Particular" e novamente no envio — conta particular não grava vínculo com filial nem por engano.
+- **Não implementado, registrado como pendência:** lista de "tipos de despesa particular" (Água, Aluguel, Internet…) cadastrada pela própria pessoa — exige migration (nova tabela + coluna + RLS por dono + parâmetro na RPC). A tabela `classificacoes` **não serve** para isso: é a estrutura contábil da empresa e seu RLS é aberto a todo autenticado, o que exporia os tipos pessoais da gestora ao administrativo. Detalhamento em D-043.
+
 ### Corrigido — Missão P042: login passa a ser exigido em toda a plataforma (2026-08-19)
 Correção de controle de acesso (D-042): o `proxy.ts` protegia só `/financeiro/:path*`; qualquer outra rota interna (Central de Operações, Cadastros, Relatórios, Gestão da Frota, Equipe Operacional, Fechamento) ficava acessível digitando a URL direto, sem sessão.
 - `proxy.ts` invertido de denylist para allowlist: só `/login`, `/recuperar-senha` e `/atualizar-senha` seguem públicas — toda outra rota exige sessão válida, com `matcher` cobrindo todas as rotas de página.

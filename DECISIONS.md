@@ -209,6 +209,24 @@ Importação/integração com o AUTEM, Google Drive, upload de arquivos, OCR/IA,
 - **Impacto em roadmap:** o item "Aprofundar o setor Acionamento", registrado como candidato de próxima missão em [ROADMAP.md](ROADMAP.md) desde a Missão 02, foi removido — a decisão de produto passou a ser a oposta (remover, não aprofundar).
 - **Verificação:** `eslint`, `tsc --noEmit` e `npm run build` limpos (34 páginas, uma a menos que antes); rota `/acionamento` confirmada 404 via HTTP; demais rotas (`/`, `/gestao-da-frota`, `/fechamento`, `/equipe-operacional`, `/cadastros`, `/relatorios`) confirmadas 200.
 
+## D-043 — Estabelecimento é campo exclusivo de conta Empresa (P043)
+
+- **Decisão:** o campo **Estabelecimento** (Matriz, Filial 01 - Eusebio, Filial 02 - Asa Serviços, Filial 03 - Eusebio) deixa de aparecer quando a natureza da conta é **Particular** — no cadastro e na barra de filtros da aba de particulares. Estabelecimento representa a **filial da empresa** à qual a despesa está vinculada; uma despesa pessoal não pertence a filial nenhuma.
+- **Motivo:** pedido do CEO na missão P043 — tornar o cadastro de conta particular mais intuitivo, sem pedir informação que não faz sentido para o caso.
+- **Nota técnica:** além de esconder o campo, o valor eventualmente já escolhido é **descartado** ao marcar "Particular" (e novamente no envio). Sem isso, quem selecionasse a filial antes de marcar Particular gravaria um vínculo que a tela não mostra mais. Nenhuma alteração de banco, migration, RLS ou regra de acesso — só interface.
+
+### Pendência registrada, não implementada — "tipos de despesa particular"
+O cliente quer que a pessoa cadastre e reutilize os próprios tipos de despesa pessoal (Água, Aluguel, Internet, Energia…). **Isso não existe hoje e exige migration — não foi criado nesta missão, por instrução explícita.**
+
+Por que **não** dá para reutilizar a tabela `classificacoes`, apesar da tentação:
+1. **É a estrutura contábil da empresa** — 95 itens em 5 grupos (ADMINISTRATIVAS 36, IMPOSTOS 30, FUNCIONÁRIOS/PESSOAL 21, FINANCEIRAS 7, OUTRAS 2), importada da planilha do escritório contábil, com a regra explícita de não inventar itens novos (D-041). Um "Aluguel do apartamento" cadastrado pela gestora entraria no mesmo vocabulário que a contabilidade usa.
+2. **RLS incompatível:** a política é `classificacoes_rw ... using (true)` — leitura e escrita para qualquer autenticado. Os tipos pessoais da gestora ficariam **visíveis para o administrativo**, contrariando toda a separação Empresa × Particular.
+3. **Coincidência que engana:** 3 dos 4 exemplos dados pelo cliente já existem literalmente em ADMINISTRATIVAS (`Água`, `Aluguel`, `Internet`) e o quarto como `Energia Elétrica`. A lista *parece* servir — mas serve por acaso, e o significado contábil é outro.
+
+O que a 2ª etapa precisaria (proposta, a validar antes de aplicar): tabela `tipos_despesa_particular` (`id`, `nome`, `dono_id uuid references auth.users` — o dono é quem cadastrou, `ativo`, `criado_em`), coluna nova `contas.tipo_despesa_particular_id` (nullable, só preenchida quando `natureza = 'particular'`), RLS restrita ao próprio dono (`dono_id = auth.uid()`), novo parâmetro na RPC `criar_conta_com_parcelas` e um cadastro simples para a pessoa gerenciar a lista.
+
+**Achado relevante encontrado durante a análise, para decisão do CEO:** o RLS atual de `contas` isola particulares por **permissão** (`pode_ver_particular()`), não por **pessoa**. A conta guarda `criado_por = auth.uid()`, mas a política não filtra por ele — então se um segundo usuário receber `pode_ver_particular = true`, ele passa a ver as contas particulares da gestora, e vice-versa. Hoje isso não acontece na prática (só a gestora tem a flag), e **nada foi alterado**. Mas se o produto for mesmo "cada pessoa tem as suas despesas particulares", a política precisa passar a considerar `criado_por` — decisão de produto, não de engenharia.
+
 ## D-042 — Login passa a ser exigido em toda a plataforma, não só na Central Financeira
 
 - **Decisão:** o `proxy.ts` deixou de proteger apenas `/financeiro/:path*` (lista de rotas protegidas) e passou a proteger **toda a plataforma por padrão** (lista de rotas públicas: `/login`, `/recuperar-senha`, `/atualizar-senha`). Sem sessão válida, qualquer rota interna — incluindo a Central de Operações (`/`), Cadastros, Relatórios, Gestão da Frota, Equipe Operacional e Fechamento — redireciona para `/login`.

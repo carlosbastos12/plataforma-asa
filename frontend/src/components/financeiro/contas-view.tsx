@@ -151,6 +151,7 @@ export function ContasView({
             aoMudar={setFiltros}
             classificacoes={opcoesClassificacao}
             estabelecimentos={opcoesEstabelecimento}
+            mostrarEstabelecimento={!ehParticular}
           />
 
           {visiveis.length === 0 ? (
