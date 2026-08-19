@@ -35,9 +35,15 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Se o Supabase estiver fora do ar ou mal configurado, o proxy não pode
+  // derrubar a plataforma inteira: trata como "sem sessão" e segue.
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    user = null;
+  }
 
   const caminho = request.nextUrl.pathname;
   const exigeSessao = ROTAS_PROTEGIDAS.some((r) => caminho.startsWith(r));
