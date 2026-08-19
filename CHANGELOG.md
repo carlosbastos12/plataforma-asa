@@ -4,6 +4,19 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Corrigido — Missão P042: login passa a ser exigido em toda a plataforma (2026-08-19)
+Correção de controle de acesso (D-042): o `proxy.ts` protegia só `/financeiro/:path*`; qualquer outra rota interna (Central de Operações, Cadastros, Relatórios, Gestão da Frota, Equipe Operacional, Fechamento) ficava acessível digitando a URL direto, sem sessão.
+- `proxy.ts` invertido de denylist para allowlist: só `/login`, `/recuperar-senha` e `/atualizar-senha` seguem públicas — toda outra rota exige sessão válida, com `matcher` cobrindo todas as rotas de página.
+- Pós-login sem `?proximo=` agora volta para `/` (antes ia para `/financeiro`), coerente com a plataforma inteira exigir login.
+- Nenhuma migration, RLS, tabela financeira, regra Empresa × Particular ou funcionalidade de módulo foi alterada — só roteamento de acesso.
+
+### Adicionado — Missão P041.1: identidade de sessão, logout e recuperação de senha (2026-08-19)
+Fecha lacunas de autenticação deixadas pela P041: identidade fixa no topo e nenhuma forma de sair ou recuperar senha.
+- Tela de login com identidade "SIGA — Sistema Integrado de Gestão ASA", substituindo o texto "Complementar ao AUTEM".
+- Avatar do topo (`Topbar`) passa a mostrar nome e papel reais da sessão (`carregarUsuarioSessao()`, tabela `perfis` já existente) em vez do texto fixo "Carlos — Diretoria"; sem sessão, mostra "Entrar".
+- Menu do usuário com opção **Sair**, reutilizando a server action `sair()` que já existia sem nenhuma interface chamando-a.
+- `/recuperar-senha` e `/atualizar-senha`: fluxo oficial do Supabase Auth (`resetPasswordForEmail` + evento `PASSWORD_RECOVERY`) — nenhuma senha é validada ou guardada pela aplicação.
+
 ### Adicionado — Missão P041: Central Financeira, primeira versão funcional (2026-08-19)
 Primeiro módulo do projeto com **backend real** (D-041): banco Postgres no Supabase exclusivo "Plataforma ASA", autenticação e RLS.
 - **Banco** (`supabase/migrations/0001_central_financeira.sql`, idempotente): `perfis`, `fornecedores`, `estabelecimentos`, `bancos`, `classificacoes`, `contas → parcelas → pagamentos → documentos`, `historico_alteracoes` com gatilhos, e a view `vw_parcelas_completo` com **status calculado**. Seed com **95 classificações reais** do escritório contábil em 5 grupos, 4 estabelecimentos e 6 bancos.

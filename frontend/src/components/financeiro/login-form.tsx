@@ -25,7 +25,7 @@ export function LoginForm() {
         setErro(r.erro ?? "Não foi possível entrar.");
         return;
       }
-      const proximo = parametros.get("proximo") ?? "/financeiro";
+      const proximo = parametros.get("proximo") ?? "/";
       router.replace(proximo);
       router.refresh();
     });

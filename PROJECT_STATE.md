@@ -4,7 +4,9 @@
 
 ## Fase atual
 
-**Central Financeira no ar — primeiro módulo com banco de dados real (P041).** A Central de Gestão Administrativa e Financeira saiu da demonstração: banco Postgres em projeto Supabase exclusivo, autenticação por e-mail/senha, RLS separando **Empresa × Particular**, cadastro de contas com parcelas, registro de pagamento, 3 relatórios e exportação XLSX/PDF funcionando (D-041). O restante da plataforma **segue como demonstração com dado fictício** — ver [CLAUDE.md](CLAUDE.md) §6 para os dois regimes.
+**Login exigido em toda a plataforma (P042).** Correção de controle de acesso: antes só `/financeiro` pedia sessão; qualquer outra rota interna abria direto pela URL, sem login. Agora `/login`, `/recuperar-senha` e `/atualizar-senha` são as únicas rotas públicas — todo o resto exige sessão válida (D-042). Identidade da sessão (nome/papel), logout e recuperação de senha também ficaram prontos nesta rodada (P041.1).
+
+**Anterior — Central Financeira no ar, primeiro módulo com banco de dados real (P041).** A Central de Gestão Administrativa e Financeira saiu da demonstração: banco Postgres em projeto Supabase exclusivo, autenticação por e-mail/senha, RLS separando **Empresa × Particular**, cadastro de contas com parcelas, registro de pagamento, 3 relatórios e exportação XLSX/PDF funcionando (D-041). O restante da plataforma **segue como demonstração com dado fictício, mas agora atrás do mesmo login** — ver [CLAUDE.md](CLAUDE.md) §6.
 
 **Anterior — Setor Acionamento removido por completo (P040).** Auditoria geral do estado do projeto seguida da remoção definitiva do setor Acionamento (quadro de chamados simulado) — não faz parte do escopo da Plataforma-ASA. Ver D-040. Acumula: painel executivo de Combustível na Home (D-039), Combustível (D-036, ciclo completo de entrada/abastecimento/estoque reativo) e Equipe Operacional (D-037, dashboard/escala/calendário) como experiências completas; clone visual do Protótipo 1 (D-035, publicado): sidebar escura, azul institucional, Home como dashboard clássico, tabelas em Documentação/Multas/Caixa. Ainda sem backend, banco, autenticação ou integração.
 

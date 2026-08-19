@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { LoginForm } from "@/components/financeiro/login-form";
 import { SUPABASE_CONFIGURADO } from "@/lib/supabase/config";
 
@@ -26,9 +25,9 @@ export default function LoginPage() {
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
           <div className="mb-5">
-            <h1 className="text-lg font-bold tracking-tight text-foreground">Central Financeira</h1>
+            <h1 className="text-lg font-bold tracking-tight text-foreground">Entrar</h1>
             <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-              Esta área trabalha com informações financeiras reais. Entre com seu acesso para continuar.
+              Entre com seu acesso para continuar na plataforma.
             </p>
           </div>
 
@@ -49,13 +48,6 @@ export default function LoginPage() {
             protegidas no próprio banco de dados.
           </p>
         </div>
-
-        <Link
-          href="/"
-          className="mt-5 flex items-center justify-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" /> Voltar para a plataforma
-        </Link>
       </div>
     </main>
   );

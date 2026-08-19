@@ -46,8 +46,9 @@ Ver [PRODUCT_VISION.md](PRODUCT_VISION.md) para a visão completa.
 O projeto vive hoje em **dois regimes simultâneos**, e é importante não confundi-los:
 
 **a) Módulos operacionais — seguem como demonstração** (Frota, Documentação, Multas, Combustível, Equipe Operacional, Fechamento/Caixa):
-- ❌ Sem backend, sem banco, sem autenticação.
+- ❌ Sem backend, sem banco de dados próprio, sem persistência real.
 - ✅ Frontend navegável com dados **simulados** (política de dados fictícios da seção 7 vale integralmente aqui).
+- ⚠️ **Exigem login (D-042):** desde a correção de acesso da missão P042, a plataforma inteira — inclusive estas telas de demonstração — só é exibida com sessão autenticada contra o mesmo projeto Supabase da Central Financeira. Não há mais rota interna aberta sem login; a ausência de backend vale para o **dado** de cada módulo, não para o **acesso** à tela.
 
 **b) Central de Gestão Administrativa e Financeira — sistema real** (D-041, a partir da missão P041):
 - ✅ Banco Postgres real em projeto **Supabase exclusivo ("Plataforma ASA")**, autenticação por e-mail/senha e Row Level Security.
