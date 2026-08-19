@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ContasView } from "@/components/financeiro/contas-view";
 import { AvisoConfiguracao } from "@/components/financeiro/aviso-configuracao";
-import { carregarFinanceiro } from "@/lib/financeiro/consultas";
+import { carregarFinanceiro, carregarTiposDespesaParticular } from "@/lib/financeiro/consultas";
 
 export const metadata: Metadata = { title: "Contas a Pagar" };
 
@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
 
 export default async function ContasAPagarPage() {
   const dados = await carregarFinanceiro("empresa");
+  // Buscado aqui também porque, se a gestora tiver permissão, o "Nova
+  // conta" desta página permite escolher "Particular" e usar o tipo.
+  const tiposDespesaParticular = dados.perfil?.pode_ver_particular
+    ? await carregarTiposDespesaParticular()
+    : [];
 
   if (!dados.configurado) {
     return (
@@ -35,6 +40,7 @@ export default async function ContasAPagarPage() {
         estabelecimentos={dados.estabelecimentos}
         bancos={dados.bancos}
         fornecedores={dados.fornecedores}
+        tiposDespesaParticular={tiposDespesaParticular}
         podeParticular={dados.perfil?.pode_ver_particular ?? false}
       />
     </div>

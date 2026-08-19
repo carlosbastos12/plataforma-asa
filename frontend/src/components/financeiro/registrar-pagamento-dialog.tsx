@@ -133,7 +133,9 @@ export function RegistrarPagamentoDialog({ parcela, bancos, aoFechar }: Props) {
                 <label className={rotuloCampo}>Banco</label>
                 <Select value={bancoId} onValueChange={(v) => setBancoId(v ?? "")}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="De onde saiu" />
+                    <SelectValue placeholder="De onde saiu">
+                      {() => bancos.find((b) => b.id === bancoId)?.nome ?? "De onde saiu"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {bancos.map((b) => (

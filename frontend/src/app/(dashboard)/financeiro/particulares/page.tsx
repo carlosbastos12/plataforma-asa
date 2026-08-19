@@ -3,7 +3,7 @@ import { Lock } from "lucide-react";
 import { ContasView } from "@/components/financeiro/contas-view";
 import { AvisoConfiguracao } from "@/components/financeiro/aviso-configuracao";
 import { EmptyState } from "@/components/empty-state";
-import { carregarFinanceiro } from "@/lib/financeiro/consultas";
+import { carregarFinanceiro, carregarTiposDespesaParticular } from "@/lib/financeiro/consultas";
 
 export const metadata: Metadata = { title: "Contas Particulares" };
 
@@ -33,6 +33,8 @@ export default async function ContasParticularesPage() {
     );
   }
 
+  const tiposDespesaParticular = await carregarTiposDespesaParticular();
+
   return (
     <div className="flex flex-col gap-5">
       <Cabecalho />
@@ -43,6 +45,7 @@ export default async function ContasParticularesPage() {
         estabelecimentos={dados.estabelecimentos}
         bancos={dados.bancos}
         fornecedores={dados.fornecedores}
+        tiposDespesaParticular={tiposDespesaParticular}
         podeParticular
       />
     </div>

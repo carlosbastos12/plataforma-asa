@@ -29,6 +29,7 @@ import {
   type Fornecedor,
   type NaturezaConta,
   type Periodicidade,
+  type TipoDespesaParticular,
   type TipoRecorrencia,
 } from "@/lib/financeiro/tipos";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,8 @@ interface Props {
   classificacoes: Classificacao[];
   estabelecimentos: Estabelecimento[];
   fornecedores: Fornecedor[];
+  /** Tipos de despesa particular do usuário logado (D-044) — só usados quando natureza = particular. */
+  tiposDespesaParticular?: TipoDespesaParticular[];
   bancos?: Banco[];
   /** Só quem tem permissão vê a opção "Particular". */
   podeParticular: boolean;
@@ -66,6 +69,7 @@ export function NovaContaDialog({
   classificacoes,
   estabelecimentos,
   fornecedores,
+  tiposDespesaParticular = [],
   podeParticular,
   naturezaInicial,
   rotulo = "Nova conta",
@@ -84,6 +88,7 @@ export function NovaContaDialog({
   const [dataDocumento, setDataDocumento] = useState("");
   const [classificacaoId, setClassificacaoId] = useState("");
   const [estabelecimentoId, setEstabelecimentoId] = useState("");
+  const [tipoDespesaParticularId, setTipoDespesaParticularId] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
@@ -99,17 +104,27 @@ export function NovaContaDialog({
   const nParcelas = Math.max(Number(qtdParcelas) || 1, 1);
 
   /**
-   * Estabelecimento é onde a despesa da EMPRESA está vinculada (Matriz,
-   * filiais). Uma despesa pessoal não pertence a nenhuma filial da ASA —
-   * por isso o campo some para conta particular, e o valor já escolhido é
-   * descartado: sem isso, quem selecionasse a filial antes de marcar
-   * "Particular" gravaria um vínculo invisível na tela.
+   * Os dois fluxos não misturam conceitos (P044): Estabelecimento,
+   * Classificação contábil, CNPJ e Nº de documento/NF só existem para
+   * despesa da EMPRESA. Antes de a natureza ser escolhida, mostra o
+   * conjunto de empresa por padrão (mesmo comportamento de sempre).
    */
-  const usaEstabelecimento = natureza !== "particular";
+  const ehParticular = natureza === "particular";
+  const tiposAtivos = useMemo(() => tiposDespesaParticular.filter((t) => t.ativo), [tiposDespesaParticular]);
 
   function escolherNatureza(nova: NaturezaConta) {
     setNatureza(nova);
-    if (nova === "particular") setEstabelecimentoId("");
+    if (nova === "particular") {
+      // Campos exclusivos de empresa somem da tela — limpa para não
+      // gravar um vínculo que a pessoa não vê mais e não escolheu.
+      setEstabelecimentoId("");
+      setClassificacaoId("");
+      setFornecedorCnpj("");
+      setNumeroDocumento("");
+      setDataDocumento("");
+    } else {
+      setTipoDespesaParticularId("");
+    }
   }
 
   const gruposClassificacao = useMemo(() => {
@@ -160,6 +175,7 @@ export function NovaContaDialog({
     setDataDocumento("");
     setClassificacaoId("");
     setEstabelecimentoId("");
+    setTipoDespesaParticularId("");
     setFormaPagamento("");
     setObservacoes("");
     setQtdParcelas("1");
@@ -194,14 +210,18 @@ export function NovaContaDialog({
         descricao,
         valorInicial: valorNum,
         vencimento,
+        // "Favorecido" (particular) usa o mesmo campo de "Fornecedor"
+        // (empresa) — mesma coluna no banco, rótulo diferente na tela.
         fornecedorNome,
-        fornecedorCnpj,
-        numeroDocumento,
-        dataDocumento,
-        // Garantia no ponto de envio: conta particular nunca leva vínculo
-        // com filial da empresa, mesmo que o estado tenha sobrado de antes.
-        estabelecimentoId: usaEstabelecimento ? estabelecimentoId : "",
-        classificacaoId,
+        // Garantias no ponto de envio: conta particular nunca leva CNPJ,
+        // nº de documento, estabelecimento ou classificação contábil da
+        // empresa — mesmo que algum estado tenha sobrado de antes.
+        fornecedorCnpj: ehParticular ? "" : fornecedorCnpj,
+        numeroDocumento: ehParticular ? "" : numeroDocumento,
+        dataDocumento: ehParticular ? "" : dataDocumento,
+        estabelecimentoId: ehParticular ? "" : estabelecimentoId,
+        classificacaoId: ehParticular ? "" : classificacaoId,
+        tipoDespesaParticularId: ehParticular ? tipoDespesaParticularId : "",
         formaPagamento,
         observacoes,
         recorrente,
@@ -292,7 +312,7 @@ export function NovaContaDialog({
               </span>
             </button>
           </div>
-          {natureza === "particular" && (
+          {ehParticular && (
             <p className="flex items-start gap-1.5 rounded-lg bg-info-soft px-3 py-2 text-[12px] text-info">
               <Info className="mt-0.5 size-3.5 shrink-0" />
               Esta conta fica no seu controle pessoal e é excluída automaticamente de tudo que vai para a
@@ -303,47 +323,63 @@ export function NovaContaDialog({
 
         {/* ---- Identificação ---- */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <label className={rotuloCampo}>Fornecedor</label>
-            <Input
-              list="lista-fornecedores"
-              value={fornecedorNome}
-              onChange={(e) => {
-                const v = e.target.value;
-                setFornecedorNome(v);
-                const achado = fornecedores.find((f) => f.nome.toLowerCase() === v.toLowerCase());
-                if (achado?.cnpj) setFornecedorCnpj(achado.cnpj);
-              }}
-              placeholder="Digite ou escolha um já cadastrado"
-            />
-            <datalist id="lista-fornecedores">
-              {fornecedores.map((f) => (
-                <option key={f.id} value={f.nome} />
-              ))}
-            </datalist>
+          <div className={cn("flex flex-col gap-1.5", ehParticular && "sm:col-span-2")}>
+            <label className={rotuloCampo}>{ehParticular ? "Favorecido" : "Fornecedor"}</label>
+            {ehParticular ? (
+              <Input
+                value={fornecedorNome}
+                onChange={(e) => setFornecedorNome(e.target.value)}
+                placeholder="Ex.: Enel, Cagece, Colégio, Imobiliária..."
+              />
+            ) : (
+              <>
+                <Input
+                  list="lista-fornecedores"
+                  value={fornecedorNome}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFornecedorNome(v);
+                    const achado = fornecedores.find((f) => f.nome.toLowerCase() === v.toLowerCase());
+                    if (achado?.cnpj) setFornecedorCnpj(achado.cnpj);
+                  }}
+                  placeholder="Digite ou escolha um já cadastrado"
+                />
+                <datalist id="lista-fornecedores">
+                  {fornecedores.map((f) => (
+                    <option key={f.id} value={f.nome} />
+                  ))}
+                </datalist>
+              </>
+            )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className={rotuloCampo}>CNPJ</label>
-            <Input value={fornecedorCnpj} onChange={(e) => setFornecedorCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
-          </div>
+          {!ehParticular && (
+            <div className="flex flex-col gap-1.5">
+              <label className={rotuloCampo}>CNPJ</label>
+              <Input value={fornecedorCnpj} onChange={(e) => setFornecedorCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1.5">
-            <label className={rotuloCampo}>Nº do documento / NF</label>
-            <Input value={numeroDocumento} onChange={(e) => setNumeroDocumento(e.target.value)} placeholder="Ex.: 4587" />
-          </div>
+          {!ehParticular && (
+            <div className="flex flex-col gap-1.5">
+              <label className={rotuloCampo}>Nº do documento / NF</label>
+              <Input value={numeroDocumento} onChange={(e) => setNumeroDocumento(e.target.value)} placeholder="Ex.: 4587" />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1.5">
-            <label className={rotuloCampo}>Data do documento</label>
-            <Input type="date" value={dataDocumento} onChange={(e) => setDataDocumento(e.target.value)} />
-          </div>
+          {!ehParticular && (
+            <div className="flex flex-col gap-1.5">
+              <label className={rotuloCampo}>Data do documento</label>
+              <Input type="date" value={dataDocumento} onChange={(e) => setDataDocumento(e.target.value)} />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label className={rotuloCampo}>Descrição *</label>
             <Input
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Ex.: Diesel S10 — carga semanal"
+              placeholder={ehParticular ? "Ex.: Conta de luz — casa" : "Ex.: Diesel S10 — carga semanal"}
             />
           </div>
         </div>
@@ -426,41 +462,77 @@ export function NovaContaDialog({
           </div>
         )}
 
-        {/* ---- Classificação e origem ---- */}
+        {/* ---- Classificação/tipo, origem e pagamento ---- */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <label className={rotuloCampo}>Classificação</label>
-            <Select value={classificacaoId} onValueChange={(v) => setClassificacaoId(v ?? "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Escolha a classificação" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {gruposClassificacao.map(([grupo, itens]) => (
-                  <SelectGroup key={grupo}>
-                    <SelectLabel>{grupo}</SelectLabel>
-                    {itens.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome}
-                        {c.confirmacao_pendente ? " (a confirmar)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-            {classificacaoEscolhida?.confirmacao_pendente && (
-              <p className="text-[11px] leading-snug text-warning">
-                O enquadramento contábil desta classificação ainda será confirmado com a contabilidade.
-              </p>
-            )}
-          </div>
+          {ehParticular ? (
+            <div className="flex flex-col gap-1.5">
+              <label className={rotuloCampo}>Tipo de despesa particular</label>
+              <Select value={tipoDespesaParticularId} onValueChange={(v) => setTipoDespesaParticularId(v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Escolha o tipo">
+                    {() => tiposAtivos.find((t) => t.id === tipoDespesaParticularId)?.nome ?? "Escolha o tipo"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposAtivos.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {tiposAtivos.length === 0 && (
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  Você ainda não tem tipos cadastrados — use o botão &quot;Meus tipos de despesa&quot; para criar o
+                  primeiro.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <label className={rotuloCampo}>Classificação</label>
+              <Select value={classificacaoId} onValueChange={(v) => setClassificacaoId(v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Escolha a classificação">
+                    {() => {
+                      if (!classificacaoEscolhida) return "Escolha a classificação";
+                      return (
+                        classificacaoEscolhida.nome +
+                        (classificacaoEscolhida.confirmacao_pendente ? " (a confirmar)" : "")
+                      );
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {gruposClassificacao.map(([grupo, itens]) => (
+                    <SelectGroup key={grupo}>
+                      <SelectLabel>{grupo}</SelectLabel>
+                      {itens.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                          {c.confirmacao_pendente ? " (a confirmar)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+              {classificacaoEscolhida?.confirmacao_pendente && (
+                <p className="text-[11px] leading-snug text-warning">
+                  O enquadramento contábil desta classificação ainda será confirmado com a contabilidade.
+                </p>
+              )}
+            </div>
+          )}
 
-          {usaEstabelecimento && (
+          {!ehParticular && (
             <div className="flex flex-col gap-1.5">
               <label className={rotuloCampo}>Estabelecimento</label>
               <Select value={estabelecimentoId} onValueChange={(v) => setEstabelecimentoId(v ?? "")}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Onde a despesa pertence" />
+                  <SelectValue placeholder="Onde a despesa pertence">
+                    {() => estabelecimentos.find((e) => e.id === estabelecimentoId)?.nome ?? "Onde a despesa pertence"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {estabelecimentos.map((e) => (
@@ -513,7 +585,9 @@ export function NovaContaDialog({
                 <label className={rotuloCampo}>Tipo</label>
                 <Select value={recorrenciaTipo} onValueChange={(v) => setRecorrenciaTipo((v as TipoRecorrencia) ?? "")}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Escolha" />
+                    <SelectValue placeholder="Escolha">
+                      {() => TIPOS_RECORRENCIA.find((t) => t.valor === recorrenciaTipo)?.label ?? "Escolha"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {TIPOS_RECORRENCIA.map((t) => (
@@ -529,7 +603,9 @@ export function NovaContaDialog({
                 <label className={rotuloCampo}>Periodicidade</label>
                 <Select value={periodicidade} onValueChange={(v) => setPeriodicidade((v as Periodicidade) ?? "")}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Escolha" />
+                    <SelectValue placeholder="Escolha">
+                      {() => PERIODICIDADES.find((p) => p.valor === periodicidade)?.label ?? "Escolha"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {PERIODICIDADES.map((p) => (

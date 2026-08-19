@@ -9,6 +9,7 @@ import {
   type LinhaParcela,
   type NaturezaConta,
   type Perfil,
+  type TipoDespesaParticular,
 } from "./tipos";
 
 export interface DadosFinanceiro {
@@ -114,6 +115,33 @@ export async function carregarUsuarioSessao(): Promise<UsuarioSessao | null> {
   if (!data) return null;
 
   return { nome: data.nome as string, papel: data.papel as Perfil["papel"] };
+}
+
+/**
+ * Tipos de despesa particular do usuário logado (Água, Aluguel...).
+ *
+ * Consulta isolada de propósito, fora do `Promise.all` de
+ * `carregarFinanceiro`: se a migration 0002 ainda não tiver sido aplicada
+ * nesta instalação, a tabela não existe e a consulta abaixo volta com
+ * `error` em vez de derrubar a página inteira — o formulário de conta
+ * particular só fica sem opções de tipo até a migration ser aplicada.
+ */
+export async function carregarTiposDespesaParticular(): Promise<TipoDespesaParticular[]> {
+  if (!SUPABASE_CONFIGURADO) return [];
+
+  const supabase = await criarClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("tipos_despesa_particular")
+    .select("id, nome, ativo")
+    .order("nome");
+
+  if (error) return [];
+  return (data ?? []) as TipoDespesaParticular[];
 }
 
 /** Indicadores da Home — só contas da empresa, nunca particulares. */

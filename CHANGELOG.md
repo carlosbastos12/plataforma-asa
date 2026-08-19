@@ -4,6 +4,14 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Missão P044: Tipos de despesa particular, Favorecido e correção de Select (2026-08-19)
+Fecha a pendência deixada em D-043 e corrige um bug de exibição (D-044):
+- **Nova migration `0002_tipos_despesa_particular.sql`** (ainda não aplicada no banco — ver pendência abaixo): tabela `tipos_despesa_particular` com dono (`dono_id`) e RLS restrita ao próprio dono; coluna `contas.tipo_despesa_particular_id`; view `vw_parcelas_completo` e RPC `criar_conta_com_parcelas` recriadas para incluir o novo campo.
+- **Tela "Meus tipos de despesa"** (`/financeiro/particulares`): cadastrar, renomear, ativar/desativar e excluir, com sugestões de um clique (Água, Energia, Aluguel, Internet, Escola, Cartão, Outros).
+- **Formulário de nova conta**, fluxo Particular: Fornecedor vira **Favorecido** (mesma coluna, sem CNPJ/datalist), Classificação vira **Tipo de despesa particular**, e Estabelecimento/Nº documento/Data documento somem — só os campos que fazem sentido para despesa pessoal.
+- **Correção: Select mostrando UUID em vez do nome** — Classificação, Estabelecimento, Tipo de despesa particular (novo), Banco (registrar pagamento) e Status (filtro) agora mostram o rótulo correto. Causa: o `Select` do projeto não usa a API `items` do base-ui; sem ela, o valor exibido cai para o dado bruto quando o `value` do item não é o próprio texto (ex.: um UUID).
+- **⚠️ Pendência — migration não aplicada:** sem acesso a token de gerência do Supabase nesta sessão. Enquanto isso, a Central Financeira segue funcionando normalmente — a consulta nova falha isolada e devolve lista vazia (testado ao vivo contra o projeto real). Aplicar `supabase/migrations/0002_tipos_despesa_particular.sql` manualmente para o recurso funcionar de ponta a ponta.
+
 ### Alterado — Missão P043: Estabelecimento só em conta Empresa (2026-08-19)
 Cadastro de conta particular fica mais direto (D-043) — apenas interface, nenhuma alteração de banco, migration, RLS ou permissão:
 - Campo **Estabelecimento** some quando a natureza é **Particular** (no cadastro e no filtro da aba de particulares); segue igual para conta Empresa, com as filiais reais.

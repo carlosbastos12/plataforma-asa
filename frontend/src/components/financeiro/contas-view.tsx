@@ -11,6 +11,7 @@ import { StatusParcelaBadge } from "./status-parcela-badge";
 import { FiltrosContasBar } from "./filtros-contas";
 import { NovaContaDialog } from "./nova-conta-dialog";
 import { RegistrarPagamentoDialog } from "./registrar-pagamento-dialog";
+import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
 import { formatarData, formatarMoeda } from "@/lib/financeiro/formato";
 import { calcularIndicadores } from "@/lib/financeiro/indicadores";
 import { aplicarFiltros, FILTROS_VAZIOS, type FiltrosContas } from "@/lib/financeiro/filtros";
@@ -22,6 +23,7 @@ import type {
   Fornecedor,
   LinhaParcela,
   NaturezaConta,
+  TipoDespesaParticular,
 } from "@/lib/financeiro/tipos";
 
 interface Props {
@@ -31,6 +33,8 @@ interface Props {
   estabelecimentos: Estabelecimento[];
   bancos: Banco[];
   fornecedores: Fornecedor[];
+  /** Tipos de despesa particular do usuário logado (D-044). */
+  tiposDespesaParticular?: TipoDespesaParticular[];
   podeParticular: boolean;
 }
 
@@ -41,6 +45,7 @@ export function ContasView({
   estabelecimentos,
   bancos,
   fornecedores,
+  tiposDespesaParticular = [],
   podeParticular,
 }: Props) {
   const [filtros, setFiltros] = useState<FiltrosContas>(FILTROS_VAZIOS);
@@ -133,10 +138,12 @@ export function ContasView({
               >
                 <FileDown className="size-3.5" /> PDF
               </Button>
+              {ehParticular && <TiposDespesaParticularDialog tipos={tiposDespesaParticular} />}
               <NovaContaDialog
                 classificacoes={classificacoes}
                 estabelecimentos={estabelecimentos}
                 fornecedores={fornecedores}
+                tiposDespesaParticular={tiposDespesaParticular}
                 podeParticular={podeParticular}
                 naturezaInicial={natureza}
                 rotulo={ehParticular ? "Nova conta particular" : "Nova conta"}

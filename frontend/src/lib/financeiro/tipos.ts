@@ -85,6 +85,17 @@ export interface Fornecedor {
   cnpj: string | null;
 }
 
+/**
+ * Tipo de despesa particular (Água, Aluguel, Internet...), cadastrado
+ * pela própria pessoa. Não confundir com `Classificacao` — aquela é a
+ * estrutura contábil da empresa (D-043/D-044).
+ */
+export interface TipoDespesaParticular {
+  id: string;
+  nome: string;
+  ativo: boolean;
+}
+
 export interface Perfil {
   id: string;
   nome: string;
@@ -125,6 +136,7 @@ export interface LinhaParcela {
   estabelecimento_nome: string | null;
   classificacao_grupo: string | null;
   classificacao_nome: string | null;
+  tipo_despesa_particular_nome: string | null;
   total_pago: number;
   total_juros: number;
   total_multa: number;

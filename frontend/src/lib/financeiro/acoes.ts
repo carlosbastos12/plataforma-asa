@@ -34,6 +34,8 @@ export interface NovaContaInput {
   competencia?: string;
   estabelecimentoId?: string;
   classificacaoId?: string;
+  /** Só para natureza particular — nunca enviado junto com classificacaoId/estabelecimentoId. */
+  tipoDespesaParticularId?: string;
   formaPagamento?: string;
   recorrente?: boolean;
   recorrenciaTipo?: TipoRecorrencia | "";
@@ -79,6 +81,7 @@ export async function criarConta(dados: NovaContaInput): Promise<Resultado> {
     p_competencia: ouNulo(dados.competencia),
     p_estabelecimento_id: ouNulo(dados.estabelecimentoId),
     p_classificacao_id: ouNulo(dados.classificacaoId),
+    p_tipo_despesa_particular_id: ouNulo(dados.tipoDespesaParticularId),
     p_forma_pagamento: ouNulo(dados.formaPagamento),
     p_recorrente: dados.recorrente ?? false,
     p_recorrencia_tipo: ouNulo(dados.recorrenciaTipo),
@@ -192,5 +195,78 @@ export async function recuperarSenha(email: string): Promise<Resultado> {
   // padrão (não erra por e-mail inexistente) — isto cobre falhas reais
   // (limite de envio, projeto sem SMTP configurado etc.).
   if (error) return { ok: false, erro: "Não foi possível enviar o e-mail agora. Tente novamente em instantes." };
+  return { ok: true };
+}
+
+/**
+ * Cadastra um tipo de despesa particular (Água, Aluguel...) para o usuário
+ * logado. `dono_id` vem da sessão, nunca do formulário — o RLS de
+ * `tipos_despesa_particular` só permite ler/alterar o próprio (D-044).
+ */
+export async function criarTipoDespesaParticular(nome: string): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+  const alvo = (nome ?? "").trim();
+  if (!alvo) return { ok: false, erro: "Informe um nome para o tipo de despesa." };
+
+  const supabase = await criarClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, erro: "Sessão expirada. Entre novamente." };
+
+  const { error } = await supabase.from("tipos_despesa_particular").insert({ dono_id: user.id, nome: alvo });
+  if (error) {
+    if (error.code === "23505") return { ok: false, erro: "Você já tem um tipo de despesa com esse nome." };
+    // Tabela ainda não existe nesta instalação (migration 0002 pendente).
+    if (error.code === "42P01") {
+      return { ok: false, erro: "Este recurso ainda não foi configurado nesta instalação (migration pendente)." };
+    }
+    return { ok: false, erro: error.message };
+  }
+
+  revalidatePath("/financeiro/particulares");
+  return { ok: true };
+}
+
+/** Renomeia e/ou ativa/desativa um tipo de despesa particular. O RLS impede alterar o de outra pessoa. */
+export async function atualizarTipoDespesaParticular(
+  id: string,
+  dados: { nome?: string; ativo?: boolean }
+): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const patch: Record<string, unknown> = {};
+  if (dados.nome !== undefined) {
+    const t = dados.nome.trim();
+    if (!t) return { ok: false, erro: "O nome não pode ficar vazio." };
+    patch.nome = t;
+  }
+  if (dados.ativo !== undefined) patch.ativo = dados.ativo;
+  if (Object.keys(patch).length === 0) return { ok: true };
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from("tipos_despesa_particular").update(patch).eq("id", id);
+  if (error) {
+    if (error.code === "23505") return { ok: false, erro: "Você já tem um tipo de despesa com esse nome." };
+    return { ok: false, erro: error.message };
+  }
+
+  revalidatePath("/financeiro/particulares");
+  return { ok: true };
+}
+
+/**
+ * Exclui um tipo de despesa particular. A coluna em `contas` é
+ * `on delete set null` — contas antigas que usavam este tipo não são
+ * apagadas nem quebram, só perdem essa etiqueta.
+ */
+export async function excluirTipoDespesaParticular(id: string): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from("tipos_despesa_particular").delete().eq("id", id);
+  if (error) return { ok: false, erro: error.message };
+
+  revalidatePath("/financeiro/particulares");
   return { ok: true };
 }

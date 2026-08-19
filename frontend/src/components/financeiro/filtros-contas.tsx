@@ -50,7 +50,9 @@ export function FiltrosContasBar({
 
         <Select value={filtros.status} onValueChange={(v) => set({ status: (v as StatusParcela) ?? "todos" })}>
           <SelectTrigger className="w-40">
-            <SelectValue />
+            <SelectValue>
+              {(v: StatusParcela | "todos") => (v === "todos" || !v ? "Todos os status" : STATUS_LABEL[v])}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {STATUS.map((s) => (
