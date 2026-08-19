@@ -173,6 +173,36 @@ Decisões tomadas neste projeto e seus motivos. Decisões de produto/arquitetura
 - **Motivo:** missão P039 — a diretoria precisa ver a maior dor operacional (combustível, VDC-001 dores 5/15) na primeira tela, sem entrar no módulo. Objetivo declaradamente comercial: impacto visual imediato na demonstração.
 - **Nota técnica:** nenhuma função nova foi criada em `lib/combustivel.ts` — a seção só chama `estoqueAtualLitros`, `consumoMedioDiarioLitros`, `diasDeAutonomiaTanque` e `insightsCombustivel`, já existentes desde D-036. Nenhuma outra tela foi alterada.
 
+## D-041 — Central Financeira: primeiro módulo com backend real (P041)
+
+- **Decisão:** a **Central de Gestão Administrativa e Financeira** é implementada sobre um projeto **Supabase exclusivo ("Plataforma ASA")**, com banco Postgres real, autenticação por e-mail/senha e Row Level Security. É o primeiro módulo do projeto que sai da demonstração e opera dado real.
+- **Motivo:** missão P041 do CEO. O módulo não existe sem persistência — cadastro de conta, acompanhamento de vencimento, registro de pagamento, histórico de alterações e fechamento contábil são, por definição, estado que precisa sobreviver ao recarregar a página.
+- **⚠️ Divergência formal com o CLAUDE.md §6, registrada e não escondida:** a constituição do projeto diz "❌ Sem backend, sem banco de dados, sem autenticação, sem API". Esta missão instrui explicitamente o contrário. O `CLAUDE.md` foi atualizado para refletir a realidade: os módulos operacionais (Frota, Combustível, Equipe, Fechamento) **seguem** como demonstração com dado fictício; a Central Financeira é a exceção consciente, marcando o início da Fase 3 do [ROADMAP.md](ROADMAP.md) para esse módulo. Mudança de fase é decisão de produto — foi tomada pelo CEO na missão, não pela engenharia.
+
+### Empresa × Particular — a decisão central
+- Toda conta tem `natureza` **obrigatória** (`empresa` | `particular`), **sem valor padrão**: quem cadastra é obrigado a escolher, o sistema nunca chuta.
+- Contas particulares são protegidas por **RLS no banco**, não pela interface: quem não tem `pode_ver_particular` recebe conjunto vazio mesmo chamando a API direto com a chave `anon`. A interface esconder o botão é conveniência; a garantia é o banco.
+- O **Fechamento Contábil** filtra `natureza = 'empresa'` e informa na tela e no PDF quantas particulares foram excluídas — a exclusão é visível, não silenciosa.
+- **Multa de caminhão é despesa da empresa**, mesmo aparecendo hoje misturada na planilha pessoal da gestora. Nada é classificado como particular por vir daquela planilha.
+
+### Notas técnicas relevantes
+- **Modelo obrigatório do cliente respeitado:** `CONTA/NF → PARCELAS → PAGAMENTOS → DOCUMENTOS`, sem tabela solta. Criação de conta + parcelas é atômica via RPC `criar_conta_com_parcelas` (SECURITY INVOKER, para o RLS continuar valendo).
+- **A fórmula do cliente vive no banco:** `valor_pago` é coluna **gerada** (`valor_inicial + juros + multa − desconto`). A tela só espelha o cálculo enquanto o usuário digita — não existe caminho para o gravado divergir do exibido.
+- **Status nunca é digitado:** `a_vencer / vence_hoje / vencida / paga / parcialmente_paga / cancelada` são derivados na view `vw_parcelas_completo` a partir de vencimento + pagamentos.
+- **Parcelas com vencimento manual:** o sistema *sugere* datas mensais e divide o valor, mas cada linha é editável — porque o cliente foi explícito que os vencimentos reais não seguem lógica de semana/quinzena/mês.
+- **Classificações:** as **95 reais** do escritório contábil, em 5 grupos, importadas sem invenção.
+- **Exportação XLSX escrita à mão** (`lib/exportar/xlsx.ts`), sem dependência: o pacote `xlsx` do npm está parado em versão com vulnerabilidades conhecidas e o `exceljs` pesaria ~1 MB no navegador. Validado gerando arquivo, descompactando e relendo. PDF via `jspdf` + `jspdf-autotable`.
+- **`middleware.ts` não existe mais no Next.js 16** — a convenção virou `proxy.ts`, confirmada na documentação da versão instalada antes de escrever o código.
+
+### Pendência registrada, não inventada — classificação "Combustível"
+O cliente pediu a classificação **Combustível** (§23 do documento de requisitos). Ela **não existe** na estrutura do escritório contábil, que só tem "Vale Combustível" em FUNCIONÁRIOS/PESSOAL — benefício a funcionário, não abastecimento de frota. Como a missão determina "se não for possível determinar com segurança o grupo, não inventar: registrar como pendência", ela foi criada em `ADMINISTRATIVAS` (vizinha de "Manutenção de Veículos") com a marca `confirmacao_pendente = true`, aparecendo na interface como **"(a confirmar)"**. Fica utilizável na demonstração **sem esconder a dúvida**. Confirmar o enquadramento com o contador.
+
+### WhatsApp — DESCARTADO
+Confirmado pelo cliente: sem notificações por WhatsApp, sem API da Meta, sem custo por mensagem, sem requisito. As notificações vivem **dentro da Plataforma ASA**. Continua verdadeiro, como fato operacional, que algumas NFs *chegam* por WhatsApp — isso é origem de documento, não integração.
+
+### Fora do escopo desta primeira versão (por instrução da missão)
+Importação/integração com o AUTEM, Google Drive, upload de arquivos, OCR/IA, geração automática das ocorrências recorrentes, pacote contábil completo com documentos, estoque, e os módulos administrativos de funcionários (frequência, atestados, multas/danos, compras).
+
 ## D-040 — Remoção completa do setor Acionamento (P040)
 - **Decisão:** o setor **Acionamento** (quadro de chamados ativos por status, D-014/Missão 02) foi removido por completo da Plataforma-ASA — não apenas escondido do menu. Removidos: rota `/acionamento` (`src/app/(dashboard)/acionamento/`), componente `ChamadosBoard` (`src/components/acionamento/`), dataset `CHAMADOS_ATIVOS`/`StatusChamado`/`ChamadoAtivo`/`STATUS_CHAMADO_LABEL` (`lib/mock-data.ts`), a função órfã `contarPendenciasPorSetor` (já sem nenhum chamador desde o clone visual D-035, mas dependente de `CHAMADOS_ATIVOS`), o indicador `chamadosAguardando` e as entradas de `/acionamento` em `contagensDaNavegacao()`/`indicadoresExecutivos()` (`lib/insights.ts`), o item de navegação da sidebar (`nav-items.ts`), o tipo/busca por "chamado" na busca global (`global-search.tsx`), a etapa "Acionamento" no onboarding (`conheca-plataforma.tsx`), o card "Relatório Operacional" (específico de despacho/chamados, `relatorio-card.tsx`) e as menções a Acionamento em `lib/cadastros.ts` (incluindo o usuário fictício "Tiago Furtado", cujo papel só existia por causa do setor).
 - **Motivo:** pedido explícito do CEO (missão P040) — o Acionamento não será utilizado na Plataforma-ASA. Nenhuma funcionalidade compartilhada com outros setores foi tocada; menções genéricas a "atender chamados" como conceito de negócio (ex.: Equipe Operacional, que descreve o impacto de uma ausência na capacidade de atendimento) foram mantidas, por não dependerem do módulo removido.

@@ -1,4 +1,4 @@
-import { LayoutGrid, Truck, Landmark, FolderOpen, FileText, Settings, Users2 } from "lucide-react";
+import { LayoutGrid, Truck, Landmark, FolderOpen, FileText, Settings, Users2, Wallet2 } from "lucide-react";
 
 export interface NavChild {
   href: string;
@@ -52,6 +52,19 @@ export const NAV_ITEMS: NavItem[] = [
     beneficio: "O dia termina conferido — o fim do mês chega sem surpresa acumulada.",
     accent: "brand-accent",
     children: [{ href: "/fechamento/caixa", label: "Caixa Particular" }],
+  },
+  {
+    href: "/financeiro",
+    label: "Financeiro",
+    icon: Wallet2,
+    description: "Contas a pagar, vencimentos e fechamento contábil",
+    pergunta: "O que a empresa tem a pagar?",
+    beneficio: "Nenhuma conta vence esquecida — e o fechamento do mês já sai pronto.",
+    accent: "brand-accent",
+    children: [
+      { href: "/financeiro", label: "Contas a Pagar" },
+      { href: "/financeiro/relatorios", label: "Relatórios" },
+    ],
   },
   {
     href: "/equipe-operacional",

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Wallet2, BarChart3, ShieldCheck, CalendarPlus, ArrowRight, Fuel, Gauge, CalendarClock, ShoppingCart } from "lucide-react";
@@ -11,6 +12,7 @@ import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { NovaMultaButton } from "@/components/multas/nova-multa-button";
+import { PainelFinanceiroHome, PainelFinanceiroHomeSkeleton } from "@/components/financeiro/painel-home";
 import { CAIXA, formatarData, formatarMoeda } from "@/lib/mock-data";
 import { calcularIndicadores, proximosVencimentos, vencimentosCriticos, multasPorOrgao, leituraOperacional } from "@/lib/insights";
 import { CAIXA_ULTIMOS_30_DIAS, CAIXA_30_DIAS_LABELS, MULTAS_POR_MES } from "@/lib/dashboard-demo";
@@ -92,6 +94,12 @@ export default function CentralDeOperacoesPage() {
           foot={`${docsEmDiaPct}% da frota regularizada`}
         />
       </section>
+
+      {/* Bloco financeiro: dado real do banco, carregado em streaming para
+          não segurar o resto da Home (P041). */}
+      <Suspense fallback={<PainelFinanceiroHomeSkeleton />}>
+        <PainelFinanceiroHome />
+      </Suspense>
 
       <Panel>
         <PanelHeader

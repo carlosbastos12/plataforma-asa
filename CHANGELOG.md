@@ -4,6 +4,20 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Missão P041: Central Financeira, primeira versão funcional (2026-08-19)
+Primeiro módulo do projeto com **backend real** (D-041): banco Postgres no Supabase exclusivo "Plataforma ASA", autenticação e RLS.
+- **Banco** (`supabase/migrations/0001_central_financeira.sql`, idempotente): `perfis`, `fornecedores`, `estabelecimentos`, `bancos`, `classificacoes`, `contas → parcelas → pagamentos → documentos`, `historico_alteracoes` com gatilhos, e a view `vw_parcelas_completo` com **status calculado**. Seed com **95 classificações reais** do escritório contábil em 5 grupos, 4 estabelecimentos e 6 bancos.
+- **Empresa × Particular**: `natureza` obrigatória e sem padrão em toda conta; contas particulares protegidas por **RLS** (não pela interface); fechamento contábil filtra só empresa e **declara na tela e no PDF** quantas particulares foram excluídas.
+- **Regra do cliente no banco**: `valor_pago` é coluna gerada (`valor + juros + multa − desconto`) — impossível gravado divergir do exibido.
+- **Telas**: `/login` (e-mail e senha), `/financeiro` (contas a pagar), `/financeiro/particulares` (restrita) e `/financeiro/relatorios` (3 relatórios: Contas da Empresa, Contas Particulares e Fechamento Contábil com verificação de pendências).
+- **Cadastro em uma passagem**: fornecedor reaproveitado ou criado na hora, parcelas com valor e **vencimento editáveis** (o cliente foi explícito que não seguem lógica fixa), classificação agrupada, recorrência (fixa/variável/reajustável + periodicidade + ocorrências) e observações.
+- **Registro de pagamento** com juros, multa, desconto e banco, mostrando o valor final enquanto se digita.
+- **Exportação XLSX e PDF funcionando de verdade** em todos os relatórios. O gerador de XLSX foi escrito sem dependência (`lib/exportar/xlsx.ts`) — o pacote `xlsx` do npm está parado em versão vulnerável e o `exceljs` custaria ~1 MB no navegador; validado gerando, descompactando e relendo o arquivo.
+- **Home**: bloco financeiro com contas vencendo, vencidas, a pagar, total pago e pendências — carregado em streaming e **sem números falsos** quando não há sessão.
+- **Next.js 16**: `middleware.ts` não existe mais; a proteção de rota foi escrita em `src/proxy.ts`, conforme a documentação da versão instalada.
+- **WhatsApp: descartado** por confirmação do cliente — notificações só dentro da plataforma.
+- Verificação: `eslint` limpo, `tsc --noEmit` limpo, `npm run build` concluído (38 rotas; `/financeiro/*` dinâmicas, Home dinâmica quando há banco configurado).
+
 ### Removido — Missão P040: Remoção completa do módulo Acionamento (2026-08-19)
 Auditoria geral do estado do projeto seguida da remoção definitiva do setor Acionamento (D-040), a pedido explícito do CEO — não faz parte do escopo da Plataforma-ASA:
 - **Excluídos:** `src/app/(dashboard)/acionamento/` (rota) e `src/components/acionamento/` (`ChamadosBoard`).

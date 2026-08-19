@@ -41,12 +41,22 @@ Uma plataforma operacional que **complementa o AUTEM, nunca o substitui**. Ataca
 
 Ver [PRODUCT_VISION.md](PRODUCT_VISION.md) para a visão completa.
 
-## 6. Fase atual: MVP de demonstração (sem backend)
+## 6. Fase atual: demonstração navegável **+ Central Financeira real**
 
-Enquanto não houver validação da diretoria, **este projeto é uma demonstração navegável, não um sistema em produção**:
-- ❌ Sem backend, sem banco de dados, sem autenticação, sem API, sem integrações reais.
-- ✅ Frontend navegável, com dados **simulados**, que precisa parecer e se comportar como um sistema real.
-- A stack técnica do `frontend/` ainda **não está definida** — é uma decisão de produto/arquitetura pendente de alinhamento com o PM (ver D-007 em [DECISIONS.md](DECISIONS.md)).
+O projeto vive hoje em **dois regimes simultâneos**, e é importante não confundi-los:
+
+**a) Módulos operacionais — seguem como demonstração** (Frota, Documentação, Multas, Combustível, Equipe Operacional, Fechamento/Caixa):
+- ❌ Sem backend, sem banco, sem autenticação.
+- ✅ Frontend navegável com dados **simulados** (política de dados fictícios da seção 7 vale integralmente aqui).
+
+**b) Central de Gestão Administrativa e Financeira — sistema real** (D-041, a partir da missão P041):
+- ✅ Banco Postgres real em projeto **Supabase exclusivo ("Plataforma ASA")**, autenticação por e-mail/senha e Row Level Security.
+- ✅ Opera **dado real do cliente** — a política de dados fictícios da seção 7 **não** se aplica a este módulo, porque aqui o propósito é justamente substituir a planilha real.
+- ✅ Toda conta é obrigatoriamente **Empresa** ou **Particular**; as particulares são protegidas por RLS e nunca entram no fechamento contábil.
+
+**Regra prática:** um módulo só sai do regime (a) para o (b) por decisão explícita do CEO, registrada em [DECISIONS.md](DECISIONS.md). Nenhum módulo novo ganha backend por iniciativa da engenharia.
+
+Stack definida: Next.js (App Router) + React + TypeScript + Tailwind v4 + shadcn/ui (D-007, D-018), com Supabase no módulo financeiro (D-041).
 
 ## 7. Política permanente de dados fictícios
 
@@ -71,7 +81,8 @@ Enquanto não houver validação da diretoria, **este projeto é uma demonstraç
 
 ## 10. Regras de desenvolvimento desta fase
 
-- Nesta fase (Sprint Zero e MVP navegável): **não criar banco, backend, autenticação, API ou integração real.**
+- **Não criar banco, backend, autenticação, API ou integração real** para os módulos em regime de demonstração (seção 6a). A exceção é a Central Financeira (seção 6b), já autorizada em D-041 — e qualquer nova exceção exige decisão explícita do CEO.
+- **Nunca versionar credenciais.** Chaves de ambiente vivem em `.env.local` (ignorado pelo git) e nas variáveis da Vercel. A chave `service_role` do Supabase não entra na aplicação em hipótese alguma.
 - Toda funcionalidade nova precisa resolver uma dor **já identificada na auditoria** — nada é adicionado "por adicionar". Se a dor não está documentada em `Auditoria-ASA/Analise/`, registrar a hipótese e validar com o PM antes de construir.
 - Documentar decisões relevantes em [DECISIONS.md](DECISIONS.md).
 - Manter [PROJECT_STATE.md](PROJECT_STATE.md) e [CHANGELOG.md](CHANGELOG.md) atualizados a cada entrega.

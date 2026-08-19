@@ -30,9 +30,15 @@ Candidatos identificados ao longo das últimas missões, em ordem sugerida:
 3. **Cofre de Credenciais** — risco de segurança já identificado na auditoria (senhas em texto plano), ainda não representado na plataforma (destacado novamente em D-034).
 4. Validação com a diretoria da arquitetura por setor antes de qualquer decisão de backend.
 
-## Fase 3 — Primeira versão real (futura, não iniciar sem aprovação explícita)
+## Fase 3 — Primeira versão real (**iniciada na Central Financeira**)
 
-Só se inicia após validação da diretoria. Envolve decisões ainda não tomadas neste projeto: backend, banco de dados, autenticação, hospedagem, integração (se houver) com o AUTEM.
+**Status: iniciada em 2026-08-19 pela missão P041, restrita ao módulo financeiro** (D-041). A Central de Gestão Administrativa e Financeira tem banco Postgres real (Supabase exclusivo "Plataforma ASA"), autenticação e RLS. Os demais módulos **permanecem** na fase de demonstração — a passagem de cada um para a Fase 3 exige decisão explícita do CEO.
+
+Próximos itens desta fase, na ordem sugerida:
+1. **Importação do AUTEM** (XLSX) — bloqueada até recebermos uma amostra real do arquivo exportado.
+2. **Upload de documentos** (NF, boleto, comprovante) e avaliação do Google Drive.
+3. **Geração automática das ocorrências** de contas recorrentes.
+4. Pacote de fechamento contábil com os documentos anexados.
 
 ## Fora do roadmap por ora
 

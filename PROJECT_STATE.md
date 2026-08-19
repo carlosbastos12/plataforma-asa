@@ -4,13 +4,17 @@
 
 ## Fase atual
 
-**Setor Acionamento removido por completo (P040).** Auditoria geral do estado do projeto seguida da remoção definitiva do setor Acionamento (quadro de chamados simulado) — não faz parte do escopo da Plataforma-ASA. Ver D-040. Acumula: painel executivo de Combustível na Home (D-039), Combustível (D-036, ciclo completo de entrada/abastecimento/estoque reativo) e Equipe Operacional (D-037, dashboard/escala/calendário) como experiências completas; clone visual do Protótipo 1 (D-035, publicado): sidebar escura, azul institucional, Home como dashboard clássico, tabelas em Documentação/Multas/Caixa. Ainda sem backend, banco, autenticação ou integração.
+**Central Financeira no ar — primeiro módulo com banco de dados real (P041).** A Central de Gestão Administrativa e Financeira saiu da demonstração: banco Postgres em projeto Supabase exclusivo, autenticação por e-mail/senha, RLS separando **Empresa × Particular**, cadastro de contas com parcelas, registro de pagamento, 3 relatórios e exportação XLSX/PDF funcionando (D-041). O restante da plataforma **segue como demonstração com dado fictício** — ver [CLAUDE.md](CLAUDE.md) §6 para os dois regimes.
+
+**Anterior — Setor Acionamento removido por completo (P040).** Auditoria geral do estado do projeto seguida da remoção definitiva do setor Acionamento (quadro de chamados simulado) — não faz parte do escopo da Plataforma-ASA. Ver D-040. Acumula: painel executivo de Combustível na Home (D-039), Combustível (D-036, ciclo completo de entrada/abastecimento/estoque reativo) e Equipe Operacional (D-037, dashboard/escala/calendário) como experiências completas; clone visual do Protótipo 1 (D-035, publicado): sidebar escura, azul institucional, Home como dashboard clássico, tabelas em Documentação/Multas/Caixa. Ainda sem backend, banco, autenticação ou integração.
 
 ## O que existe
 
 | Item | Estado |
 |---|---|
 | Fundação documental (Sprint Zero) | ✅ Completa |
+| **Central Financeira** (`/financeiro`) | ✅ **Sistema real** (D-041): Supabase exclusivo, login, RLS, contas → parcelas → pagamentos, 3 relatórios, exportação XLSX/PDF. Requer aplicar `supabase/migrations/0001_central_financeira.sql` e configurar as env vars |
+| Backend / banco / autenticação | ✅ Existem **apenas** na Central Financeira; demais módulos seguem sem backend |
 | Stack técnica do `frontend/` | ✅ Next.js + React + TypeScript + Tailwind v4 + shadcn/ui + Lucide + Motion + next-themes (D-007, D-018) |
 | Design tokens próprios (paleta, tipografia) | ✅ Implementados (D-010) |
 | Organização por setor (Gestão da Frota / Fechamento) | ✅ Nova arquitetura de navegação (D-014); setor Acionamento removido por completo na P040 (D-040) |
@@ -35,7 +39,10 @@
 
 ## O que NÃO existe (intencionalmente, nesta fase)
 
-- ❌ Backend, banco de dados, autenticação, API — nenhum será criado até decisão explícita (ver [ROADMAP.md](ROADMAP.md), Fase 3).
+- ❌ Backend, banco de dados e autenticação **nos módulos operacionais** (Frota, Combustível, Equipe, Fechamento) — seguem como demonstração. A exceção autorizada é a Central Financeira (D-041).
+- ❌ Importação/integração com o AUTEM — aguardando uma amostra real do arquivo exportado (XLSX).
+- ❌ Upload de documentos e Google Drive — a tabela `documentos` já existe e está relacionada, mas nada é enviado ainda.
+- ❌ Geração automática das ocorrências de contas recorrentes — o cadastro já guarda tipo, periodicidade e nº de ocorrências.
 - ❌ Cofre de Credenciais e um Dashboard/Relatórios dedicado — a Central de Operações cumpre esse papel por ora.
 - ❌ Regras de negócio do processo de Fechamento (conferência, consolidação, seguradoras) — ainda não conhecidas; apenas conceito visual (D-015).
 - ❌ Vistorias e Compras da frota como telas reais — hoje são cartões sinalizando escopo futuro dentro de Gestão da Frota (Combustível deixou este grupo na P033).
