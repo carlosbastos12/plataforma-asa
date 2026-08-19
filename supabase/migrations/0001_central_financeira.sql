@@ -74,6 +74,23 @@ as $$
   );
 $$;
 
+-- Mesma razão do helper acima, mas para "é gestora" — usado nas próprias
+-- políticas da tabela `perfis`. Sem SECURITY DEFINER aqui, uma política de
+-- `perfis` que consulta `perfis` dispara recursão infinita (Postgres
+-- 42P17), porque a subconsulta reavalia a mesma política sobre si mesma.
+create or replace function public.eh_gestora()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select coalesce(
+    (select p.papel = 'gestora' from public.perfis p where p.id = auth.uid()),
+    false
+  );
+$$;
+
 -- =====================================================================
 -- 2. TABELAS DE APOIO (cadastrar uma vez, reutilizar — §3/§46)
 -- =====================================================================
@@ -401,14 +418,11 @@ alter table historico_alteracoes enable row level security;
 -- --- Perfis: cada um lê o próprio; gestora lê todos -------------------
 drop policy if exists perfis_select on perfis;
 create policy perfis_select on perfis for select to authenticated
-  using (
-    id = auth.uid()
-    or exists (select 1 from perfis p where p.id = auth.uid() and p.papel = 'gestora')
-  );
+  using (id = auth.uid() or public.eh_gestora());
 
 drop policy if exists perfis_update_gestora on perfis;
 create policy perfis_update_gestora on perfis for update to authenticated
-  using (exists (select 1 from perfis p where p.id = auth.uid() and p.papel = 'gestora'));
+  using (public.eh_gestora());
 
 -- --- Tabelas de apoio: leitura para todo usuário autenticado ----------
 drop policy if exists estabelecimentos_rw on estabelecimentos;

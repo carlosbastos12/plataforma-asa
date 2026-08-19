@@ -135,13 +135,17 @@ if (!gestoraEmail || !gestoraSenha) {
   pular("login da gestora", "defina ASA_GESTORA_EMAIL e ASA_GESTORA_SENHA");
 } else {
   gestora = cliente(URL, CHAVE);
-  const { error } = await gestora.auth.signInWithPassword({ email: gestoraEmail, password: gestoraSenha });
+  const { data: sessao, error } = await gestora.auth.signInWithPassword({ email: gestoraEmail, password: gestoraSenha });
   if (error) {
     erro("login da gestora", error.message);
     gestora = null;
   } else {
     ok("login da gestora");
-    const { data: perfil } = await gestora.from("perfis").select("nome, papel, pode_ver_particular").maybeSingle();
+    // Filtrar pelo próprio id é obrigatório aqui: a política de RLS de
+    // `perfis` deixa quem é gestora enxergar TODOS os perfis (ela
+    // administra usuários) — sem o filtro, .maybeSingle() erra com
+    // "múltiplas linhas" assim que houver mais de um usuário cadastrado.
+    const { data: perfil } = await gestora.from("perfis").select("nome, papel, pode_ver_particular").eq("id", sessao.user.id).maybeSingle();
     if (!perfil) erro("perfil da gestora", "não encontrado");
     else if (!perfil.pode_ver_particular) erro("gestora", "está sem pode_ver_particular = true");
     else ok("gestora com permissão para contas particulares", `papel: ${perfil.papel}`);
