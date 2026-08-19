@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,9 +50,14 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="senha" className="text-xs font-medium text-muted-foreground">
-          Senha
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="senha" className="text-xs font-medium text-muted-foreground">
+            Senha
+          </label>
+          <Link href="/recuperar-senha" className="text-xs font-medium text-primary hover:underline">
+            Esqueci minha senha
+          </Link>
+        </div>
         <Input
           id="senha"
           type="password"

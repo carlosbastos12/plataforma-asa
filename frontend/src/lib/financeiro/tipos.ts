@@ -92,6 +92,14 @@ export interface Perfil {
   pode_ver_particular: boolean;
 }
 
+/** Rótulo de exibição para cada papel — mesmos valores do enum `papel_usuario` do banco. */
+export const PAPEL_LABEL: Record<Perfil["papel"], string> = {
+  gestora: "Gestora",
+  administrativo: "Administrativo",
+  logistico: "Logístico",
+  consulta: "Consulta",
+};
+
 /** Uma linha da visão consolidada `vw_parcelas_completo`. */
 export interface LinhaParcela {
   parcela_id: string;

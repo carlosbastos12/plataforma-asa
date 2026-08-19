@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { SUPABASE_CONFIGURADO } from "@/lib/supabase/config";
 import type { NaturezaConta, Periodicidade, TipoRecorrencia } from "./tipos";
@@ -159,4 +160,37 @@ export async function sair(): Promise<void> {
   const supabase = await criarClienteServidor();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
+}
+
+/** Origem da requisição atual (esquema + host), para montar o link de retorno do e-mail de recuperação. */
+async function origemDoSite(): Promise<string> {
+  const cabecalhos = await headers();
+  const host = cabecalhos.get("host") ?? "localhost:3000";
+  const local = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  const protocolo = cabecalhos.get("x-forwarded-proto") ?? (local ? "http" : "https");
+  return `${protocolo}://${host}`;
+}
+
+/**
+ * Envia o e-mail de recuperação de senha pelo fluxo oficial do Supabase
+ * Auth. Não guarda nem valida senha na aplicação — quem confirma a troca é
+ * o próprio Supabase, pelo link enviado ao e-mail informado.
+ */
+export async function recuperarSenha(email: string): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+  const alvo = (email ?? "").trim();
+  if (!alvo) return { ok: false, erro: "Informe seu e-mail." };
+
+  const supabase = await criarClienteServidor();
+  const origem = await origemDoSite();
+  const { error } = await supabase.auth.resetPasswordForEmail(alvo, {
+    redirectTo: `${origem}/atualizar-senha`,
+  });
+
+  // Mensagem neutra de propósito, mesmo padrão de `entrar`: não revela se o
+  // e-mail está cadastrado. O próprio Supabase já se comporta assim por
+  // padrão (não erra por e-mail inexistente) — isto cobre falhas reais
+  // (limite de envio, projeto sem SMTP configurado etc.).
+  if (error) return { ok: false, erro: "Não foi possível enviar o e-mail agora. Tente novamente em instantes." };
+  return { ok: true };
 }

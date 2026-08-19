@@ -91,6 +91,31 @@ export async function carregarFinanceiro(natureza?: NaturezaConta): Promise<Dado
   };
 }
 
+export interface UsuarioSessao {
+  nome: string;
+  papel: Perfil["papel"];
+}
+
+/**
+ * Identidade do usuário autenticado, para exibição fora da Central
+ * Financeira (avatar no topo da plataforma). Consulta leve — não carrega
+ * contas, parcelas nem tabelas de apoio, ao contrário de `carregarFinanceiro`.
+ */
+export async function carregarUsuarioSessao(): Promise<UsuarioSessao | null> {
+  if (!SUPABASE_CONFIGURADO) return null;
+
+  const supabase = await criarClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase.from("perfis").select("nome, papel").eq("id", user.id).maybeSingle();
+  if (!data) return null;
+
+  return { nome: data.nome as string, papel: data.papel as Perfil["papel"] };
+}
+
 /** Indicadores da Home — só contas da empresa, nunca particulares. */
 export async function carregarResumoEmpresa(): Promise<LinhaParcela[]> {
   if (!SUPABASE_CONFIGURADO) return [];
