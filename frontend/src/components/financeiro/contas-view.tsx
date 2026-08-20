@@ -1,16 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarClock, AlertTriangle, Wallet2, CircleCheckBig, FileDown, FileSpreadsheet } from "lucide-react";
+import {
+  CalendarClock,
+  AlertTriangle,
+  Wallet2,
+  CircleCheckBig,
+  FileDown,
+  FileSpreadsheet,
+  MoreVertical,
+  Pencil,
+  Ban,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/empty-state";
 import { StatusParcelaBadge } from "./status-parcela-badge";
 import { FiltrosContasBar } from "./filtros-contas";
 import { NovaContaDialog } from "./nova-conta-dialog";
 import { RegistrarPagamentoDialog } from "./registrar-pagamento-dialog";
+import { EditarContaDialog } from "./editar-conta-dialog";
+import { RemoverContaDialog } from "./remover-conta-dialog";
 import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
 import { formatarData, formatarMoeda } from "@/lib/financeiro/formato";
 import { calcularIndicadores } from "@/lib/financeiro/indicadores";
@@ -50,9 +69,20 @@ export function ContasView({
 }: Props) {
   const [filtros, setFiltros] = useState<FiltrosContas>(FILTROS_VAZIOS);
   const [parcelaEmPagamento, setParcelaEmPagamento] = useState<LinhaParcela | null>(null);
+  const [contaEmEdicaoId, setContaEmEdicaoId] = useState<string | null>(null);
+  const [acaoRemocao, setAcaoRemocao] = useState<{ linha: LinhaParcela; modo: "remover" | "cancelar" } | null>(null);
 
   const visiveis = useMemo(() => aplicarFiltros(linhas, filtros), [linhas, filtros]);
   const indicadores = useMemo(() => calcularIndicadores(visiveis), [visiveis]);
+
+  // Uma conta só pode ser apagada de vez se nunca recebeu pagamento —
+  // calculado sobre TODAS as linhas (não só as filtradas), porque é uma
+  // regra de negócio, não uma consequência do filtro ativo na tela.
+  const contasComPagamento = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of linhas) if (l.total_pago > 0) s.add(l.conta_id);
+    return s;
+  }, [linhas]);
 
   const opcoesClassificacao = useMemo(
     () => Array.from(new Set(linhas.map((l) => l.classificacao_nome ?? "Sem classificação"))).sort(),
@@ -223,11 +253,40 @@ export function ContasView({
                           {l.total_pago > 0 ? formatarMoeda(l.total_pago) : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          {!quitada && (
-                            <Button variant="outline" size="sm" onClick={() => setParcelaEmPagamento(l)}>
-                              Pagar
-                            </Button>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!quitada && (
+                              <Button variant="outline" size="sm" onClick={() => setParcelaEmPagamento(l)}>
+                                Pagar
+                              </Button>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                render={<Button variant="ghost" size="icon" className="size-8" aria-label="Mais ações da conta" />}
+                              >
+                                <MoreVertical className="size-4" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setContaEmEdicaoId(l.conta_id)}>
+                                  <Pencil className="size-4" /> Editar conta
+                                </DropdownMenuItem>
+                                {contasComPagamento.has(l.conta_id) ? (
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => setAcaoRemocao({ linha: l, modo: "cancelar" })}
+                                  >
+                                    <Ban className="size-4" /> Cancelar conta
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => setAcaoRemocao({ linha: l, modo: "remover" })}
+                                  >
+                                    <Trash2 className="size-4" /> Remover conta
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -244,6 +303,15 @@ export function ContasView({
         bancos={bancos}
         aoFechar={() => setParcelaEmPagamento(null)}
       />
+      <EditarContaDialog
+        contaId={contaEmEdicaoId}
+        classificacoes={classificacoes}
+        estabelecimentos={estabelecimentos}
+        fornecedores={fornecedores}
+        tiposDespesaParticular={tiposDespesaParticular}
+        aoFechar={() => setContaEmEdicaoId(null)}
+      />
+      <RemoverContaDialog alvo={acaoRemocao} aoFechar={() => setAcaoRemocao(null)} />
     </div>
   );
 }

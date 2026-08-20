@@ -4,6 +4,14 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Missão P046: editar e remover contas cadastradas (2026-08-19)
+Contas a pagar já cadastradas ganharam um menu de ações por linha (D-046):
+- **Editar conta**: reabre os campos do cadastro pré-preenchidos (Fornecedor/Favorecido, documento, descrição, vencimento, Classificação/Estabelecimento ou Tipo de despesa particular, forma de pagamento, observações, recorrência). Natureza não é editável; parcelas/valores já lançados não são tocados.
+- **Remover conta**: apaga de vez — só oferecida quando a conta nunca recebeu pagamento.
+- **Cancelar conta**: quando já existe pagamento registrado, a conta é marcada como `cancelada` em vez de apagada, preservando o histórico financeiro (o gatilho de auditoria só captura alterações, não exclusões).
+- Ambas pedem confirmação num diálogo próprio antes de executar.
+- Nenhuma migration nova: as políticas de RLS para update/delete de `contas` já existiam desde a 0001.
+
 ### Corrigido — Missão P045: lista de estabelecimentos e acesso aos tipos de despesa particular (2026-08-19)
 Dois problemas de uso real reportados na tela "Nova conta a pagar" (D-045):
 - **Migration `0003_ajuste_estabelecimentos.sql` aplicada no banco real**: lista de estabelecimentos corrigida para refletir a empresa real — `ASA — Matriz`, `Filial 01 — Eusébio`, `Filial 02 — Eusébio`. "Filial 02 - Asa Serviços" foi desativada (não excluída, para não arriscar violar a referência de contas antigas).

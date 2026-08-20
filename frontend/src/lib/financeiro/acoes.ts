@@ -100,6 +100,214 @@ export async function criarConta(dados: NovaContaInput): Promise<Resultado> {
   return { ok: true };
 }
 
+export interface AtualizarContaInput {
+  contaId: string;
+  descricao: string;
+  vencimento: string;
+  fornecedorNome?: string;
+  fornecedorCnpj?: string;
+  numeroDocumento?: string;
+  dataDocumento?: string;
+  estabelecimentoId?: string;
+  classificacaoId?: string;
+  tipoDespesaParticularId?: string;
+  formaPagamento?: string;
+  recorrente?: boolean;
+  recorrenciaTipo?: TipoRecorrencia | "";
+  periodicidade?: Periodicidade | "";
+  valorAproximado?: number | null;
+  ocorrencias?: number | null;
+  observacoes?: string;
+}
+
+export interface ContaDetalhe {
+  id: string;
+  natureza: NaturezaConta;
+  descricao: string;
+  vencimento: string;
+  fornecedorNome: string;
+  fornecedorCnpj: string;
+  numeroDocumento: string;
+  dataDocumento: string;
+  estabelecimentoId: string;
+  classificacaoId: string;
+  tipoDespesaParticularId: string;
+  formaPagamento: string;
+  recorrente: boolean;
+  recorrenciaTipo: TipoRecorrencia | "";
+  periodicidade: Periodicidade | "";
+  valorAproximado: number | null;
+  ocorrencias: number | null;
+  observacoes: string;
+  cancelada: boolean;
+}
+
+/**
+ * Busca uma conta pelo id, com os IDs reais dos vínculos (a view
+ * `vw_parcelas_completo` só expõe os nomes já resolvidos, úteis para
+ * listar — não para preencher um formulário de edição). Passa pelo
+ * mesmo RLS de `contas_select`: conta particular de outra pessoa nunca
+ * chega aqui.
+ */
+export async function buscarConta(contaId: string): Promise<{ ok: true; conta: ContaDetalhe } | Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase
+    .from("contas")
+    .select(
+      "id, natureza, descricao, vencimento, numero_documento, data_documento, estabelecimento_id, classificacao_id, tipo_despesa_particular_id, forma_pagamento, recorrente, recorrencia_tipo, periodicidade, valor_aproximado, ocorrencias, observacoes, cancelada, fornecedores(nome, cnpj)"
+    )
+    .eq("id", contaId)
+    .maybeSingle();
+
+  if (error) return { ok: false, erro: error.message };
+  if (!data) return { ok: false, erro: "Conta não encontrada (ou você não tem acesso a ela)." };
+
+  const fornecedorBruto = data.fornecedores as { nome: string; cnpj: string | null } | { nome: string; cnpj: string | null }[] | null;
+  const fornecedor = Array.isArray(fornecedorBruto) ? fornecedorBruto[0] : fornecedorBruto;
+
+  return {
+    ok: true,
+    conta: {
+      id: data.id,
+      natureza: data.natureza,
+      descricao: data.descricao,
+      vencimento: data.vencimento,
+      fornecedorNome: fornecedor?.nome ?? "",
+      fornecedorCnpj: fornecedor?.cnpj ?? "",
+      numeroDocumento: data.numero_documento ?? "",
+      dataDocumento: data.data_documento ?? "",
+      estabelecimentoId: data.estabelecimento_id ?? "",
+      classificacaoId: data.classificacao_id ?? "",
+      tipoDespesaParticularId: data.tipo_despesa_particular_id ?? "",
+      formaPagamento: data.forma_pagamento ?? "",
+      recorrente: data.recorrente ?? false,
+      recorrenciaTipo: (data.recorrencia_tipo ?? "") as TipoRecorrencia | "",
+      periodicidade: (data.periodicidade ?? "") as Periodicidade | "",
+      valorAproximado: data.valor_aproximado,
+      ocorrencias: data.ocorrencias,
+      observacoes: data.observacoes ?? "",
+      cancelada: data.cancelada ?? false,
+    },
+  };
+}
+
+/**
+ * Atualiza os dados de uma conta já cadastrada. Não mexe em parcelas,
+ * pagamentos nem na natureza (Empresa/Particular é uma decisão feita uma
+ * vez no cadastro — mudar depois abriria a porta para uma conta
+ * particular "virar" empresarial por engano, ou vice-versa).
+ */
+export async function atualizarConta(dados: AtualizarContaInput): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+  if (!ouNulo(dados.descricao)) return { ok: false, erro: "A descrição é obrigatória." };
+  if (!ouNulo(dados.vencimento)) return { ok: false, erro: "O vencimento é obrigatório." };
+  if (dados.recorrente && (!dados.recorrenciaTipo || !dados.periodicidade)) {
+    return { ok: false, erro: "Para conta recorrente, informe o tipo e a periodicidade." };
+  }
+
+  const supabase = await criarClienteServidor();
+
+  // Favorecido/Fornecedor: mesma lógica de "reaproveita se existe, cria
+  // se novo" da RPC de criação (§3/§46) — feita aqui em duas consultas
+  // porque não existe RPC de atualização.
+  let fornecedorId: string | null = null;
+  const nomeFornecedor = ouNulo(dados.fornecedorNome);
+  if (nomeFornecedor) {
+    const { data: existente } = await supabase
+      .from("fornecedores")
+      .select("id, cnpj")
+      .ilike("nome", nomeFornecedor)
+      .maybeSingle();
+
+    if (existente) {
+      fornecedorId = existente.id;
+      const cnpjNovo = ouNulo(dados.fornecedorCnpj);
+      if (cnpjNovo && !existente.cnpj) {
+        await supabase.from("fornecedores").update({ cnpj: cnpjNovo }).eq("id", existente.id);
+      }
+    } else {
+      const { data: criado, error: erroCriar } = await supabase
+        .from("fornecedores")
+        .insert({ nome: nomeFornecedor, cnpj: ouNulo(dados.fornecedorCnpj) })
+        .select("id")
+        .single();
+      if (erroCriar) return { ok: false, erro: erroCriar.message };
+      fornecedorId = criado.id;
+    }
+  }
+
+  const { error } = await supabase
+    .from("contas")
+    .update({
+      fornecedor_id: fornecedorId,
+      descricao: dados.descricao.trim(),
+      vencimento: dados.vencimento,
+      numero_documento: ouNulo(dados.numeroDocumento),
+      data_documento: ouNulo(dados.dataDocumento),
+      estabelecimento_id: ouNulo(dados.estabelecimentoId),
+      classificacao_id: ouNulo(dados.classificacaoId),
+      tipo_despesa_particular_id: ouNulo(dados.tipoDespesaParticularId),
+      forma_pagamento: ouNulo(dados.formaPagamento),
+      recorrente: dados.recorrente ?? false,
+      recorrencia_tipo: dados.recorrente ? ouNulo(dados.recorrenciaTipo) : null,
+      periodicidade: dados.recorrente ? ouNulo(dados.periodicidade) : null,
+      valor_aproximado: dados.recorrente ? (dados.valorAproximado ?? null) : null,
+      ocorrencias: dados.recorrente ? (dados.ocorrencias ?? null) : null,
+      observacoes: ouNulo(dados.observacoes),
+    })
+    .eq("id", dados.contaId);
+
+  if (error) return { ok: false, erro: error.message };
+
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/particulares");
+  revalidatePath("/financeiro/relatorios");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * Remove uma conta (e suas parcelas, em cascata). Só deve ser oferecida
+ * pela interface quando a conta NUNCA recebeu pagamento — apagar uma
+ * conta com pagamento já registrado apagaria o histórico financeiro
+ * junto, sem deixar rastro (o gatilho de `historico_alteracoes` só
+ * captura UPDATE, não DELETE). Para esse caso, ver `cancelarConta`.
+ */
+export async function excluirConta(contaId: string): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from("contas").delete().eq("id", contaId);
+  if (error) return { ok: false, erro: error.message };
+
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/particulares");
+  revalidatePath("/financeiro/relatorios");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * Cancela uma conta sem apagar nada — usada quando ela já tem pagamento
+ * registrado. `cancelada` já é um status terminal reconhecido em toda a
+ * Central Financeira (relatórios, fechamento, badge de status).
+ */
+export async function cancelarConta(contaId: string): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from("contas").update({ cancelada: true }).eq("id", contaId);
+  if (error) return { ok: false, erro: error.message };
+
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/particulares");
+  revalidatePath("/financeiro/relatorios");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export interface NovoPagamentoInput {
   parcelaId: string;
   dataPagamento: string;
