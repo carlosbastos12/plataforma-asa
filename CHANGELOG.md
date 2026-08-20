@@ -4,6 +4,11 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Corrigido — Missão P045: lista de estabelecimentos e acesso aos tipos de despesa particular (2026-08-19)
+Dois problemas de uso real reportados na tela "Nova conta a pagar" (D-045):
+- **Migration `0003_ajuste_estabelecimentos.sql` aplicada no banco real**: lista de estabelecimentos corrigida para refletir a empresa real — `ASA — Matriz`, `Filial 01 — Eusébio`, `Filial 02 — Eusébio`. "Filial 02 - Asa Serviços" foi desativada (não excluída, para não arriscar violar a referência de contas antigas).
+- **"Gerenciar tipos" agora aparece dentro do cadastro de conta**: o diálogo de tipos de despesa particular (D-044) passou a ser acessível direto ao lado do campo "Tipo de despesa particular" no `NovaContaDialog`, não só no cabeçalho de `/financeiro/particulares`. Antes, quem abria "Nova conta" a partir da página Empresa e escolhia "Particular" não tinha como criar um tipo sem fechar o formulário e navegar até outra página.
+
 ### Adicionado — Missão P044: Tipos de despesa particular, Favorecido e correção de Select (2026-08-19)
 Fecha a pendência deixada em D-043 e corrige um bug de exibição (D-044):
 - **Nova migration `0002_tipos_despesa_particular.sql`** (ainda não aplicada no banco — ver pendência abaixo): tabela `tipos_despesa_particular` com dono (`dono_id`) e RLS restrita ao próprio dono; coluna `contas.tipo_despesa_particular_id`; view `vw_parcelas_completo` e RPC `criar_conta_com_parcelas` recriadas para incluir o novo campo.

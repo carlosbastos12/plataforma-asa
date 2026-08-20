@@ -17,12 +17,14 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   tipos: TipoDespesaParticular[];
+  /** Texto do botão-gatilho — muda conforme onde o diálogo é aberto (cabeçalho da lista vs. dentro do cadastro de conta). */
+  rotulo?: string;
 }
 
 /** Sugestões prontas para o primeiro uso — um clique cadastra, nada é criado sem ação da pessoa. */
 const SUGESTOES = ["Água", "Energia", "Aluguel", "Internet", "Escola", "Cartão", "Outros"];
 
-export function TiposDespesaParticularDialog({ tipos }: Props) {
+export function TiposDespesaParticularDialog({ tipos, rotulo = "Meus tipos de despesa" }: Props) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [novoNome, setNovoNome] = useState("");
@@ -95,8 +97,8 @@ export function TiposDespesaParticularDialog({ tipos }: Props) {
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAberto(true)}>
-        <ListTree className="size-3.5" /> Meus tipos de despesa
+      <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => setAberto(true)}>
+        <ListTree className="size-3.5" /> {rotulo}
       </Button>
 
       <DialogContent className="max-h-[85vh] gap-4 overflow-y-auto p-6 sm:max-w-md">

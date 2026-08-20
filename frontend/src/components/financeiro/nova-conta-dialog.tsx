@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
 import { criarConta } from "@/lib/financeiro/acoes";
 import { hojeISO, formatarMoeda } from "@/lib/financeiro/formato";
 import {
@@ -467,24 +468,28 @@ export function NovaContaDialog({
           {ehParticular ? (
             <div className="flex flex-col gap-1.5">
               <label className={rotuloCampo}>Tipo de despesa particular</label>
-              <Select value={tipoDespesaParticularId} onValueChange={(v) => setTipoDespesaParticularId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Escolha o tipo">
-                    {() => tiposAtivos.find((t) => t.id === tipoDespesaParticularId)?.nome ?? "Escolha o tipo"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposAtivos.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <Select value={tipoDespesaParticularId} onValueChange={(v) => setTipoDespesaParticularId(v ?? "")}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Escolha o tipo">
+                        {() => tiposAtivos.find((t) => t.id === tipoDespesaParticularId)?.nome ?? "Escolha o tipo"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposAtivos.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <TiposDespesaParticularDialog tipos={tiposDespesaParticular} rotulo="Gerenciar tipos" />
+              </div>
               {tiposAtivos.length === 0 && (
                 <p className="text-[11px] leading-snug text-muted-foreground">
-                  Você ainda não tem tipos cadastrados — use o botão &quot;Meus tipos de despesa&quot; para criar o
-                  primeiro.
+                  Você ainda não tem tipos cadastrados — clique em &quot;Gerenciar tipos&quot; para criar o primeiro.
                 </p>
               )}
             </div>

@@ -55,6 +55,11 @@ exception when duplicate_object then null; end $$;
 
 -- ---------------------------------------------------------------------
 -- 3. VIEW — recriada com o nome do tipo (mesma definição da 0001 + 1 join)
+--
+-- A coluna nova vai no FINAL da lista de select, depois de
+-- `dias_em_atraso`: `create or replace view` exige que toda coluna já
+-- existente mantenha o mesmo nome NA MESMA POSIÇÃO — só é permitido
+-- adicionar coluna ao final (Postgres 42P16 se inserida no meio).
 -- ---------------------------------------------------------------------
 create or replace view vw_parcelas_completo as
 select
@@ -81,7 +86,6 @@ select
   e.nome              as estabelecimento_nome,
   cl.grupo            as classificacao_grupo,
   cl.nome             as classificacao_nome,
-  tdp.nome            as tipo_despesa_particular_nome,
   coalesce(pg.total_pago, 0)     as total_pago,
   coalesce(pg.total_juros, 0)    as total_juros,
   coalesce(pg.total_multa, 0)    as total_multa,
@@ -100,7 +104,9 @@ select
     when p.vencimento < current_date and coalesce(pg.total_pago, 0) < p.valor and not c.cancelada
       then (current_date - p.vencimento)
     else 0
-  end as dias_em_atraso
+  end as dias_em_atraso,
+  -- Coluna nova: precisa ficar por último (ver nota acima do SELECT).
+  tdp.nome            as tipo_despesa_particular_nome
 from parcelas p
 join contas c on c.id = p.conta_id
 left join fornecedores f on f.id = c.fornecedor_id
