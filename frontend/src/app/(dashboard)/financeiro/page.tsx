@@ -41,6 +41,7 @@ export default async function ContasAPagarPage() {
         bancos={dados.bancos}
         fornecedores={dados.fornecedores}
         tiposDespesaParticular={tiposDespesaParticular}
+        modelosHistorico={dados.modelosHistorico}
         podeParticular={dados.perfil?.pode_ver_particular ?? false}
       />
     </div>

@@ -4,7 +4,11 @@
 
 ## Fase atual
 
-**Login exigido em toda a plataforma (P042).** Correção de controle de acesso: antes só `/financeiro` pedia sessão; qualquer outra rota interna abria direto pela URL, sem login. Agora `/login`, `/recuperar-senha` e `/atualizar-senha` são as únicas rotas públicas — todo o resto exige sessão válida (D-042). Identidade da sessão (nome/papel), logout e recuperação de senha também ficaram prontos nesta rodada (P041.1).
+**Novo Financeiro — Etapas 1–4 finalizadas (D-047 + D-048).** Ajustes do teste real aplicados: visualizar documento agora abre o PDF em vez de pedir para salvar (com botão separado de baixar, e o bucket seguindo privado); janela de documentos alargada, sem rolagem horizontal; novo botão reutilizável **"ⓘ Como funciona?"**, estreado no Fechamento para a Contabilidade; e navegação do módulo mais rápida — o layout deixou de repetir a consulta mais pesada do Financeiro só para montar o menu.
+
+**Base — Etapas 1–4 (D-047).** Grupo→Classificação em dois passos; campo Histórico (com catálogo de modelos reais); nova exportação para a contabilidade no grão de PAGAMENTO (13 colunas exatas da planilha real do escritório contábil); Documentos e anexos (NF/boleto/comprovante) com Storage real e bucket privado. **Migration `0004_historico_grupo_documentos.sql` já aplicada no banco real** (2026-08-20), com todos os objetos confirmados por consulta direta — o código está pronto para deploy. Importador da AutEM, vínculo Multa↔Conta, Frota↔Conta e Combustível↔Conta ficam para etapas seguintes, por decisão explícita da missão.
+
+**Anterior — Login exigido em toda a plataforma (P042).** Correção de controle de acesso: antes só `/financeiro` pedia sessão; qualquer outra rota interna abria direto pela URL, sem login. Agora `/login`, `/recuperar-senha` e `/atualizar-senha` são as únicas rotas públicas — todo o resto exige sessão válida (D-042). Identidade da sessão (nome/papel), logout e recuperação de senha também ficaram prontos nesta rodada (P041.1).
 
 **Anterior — Central Financeira no ar, primeiro módulo com banco de dados real (P041).** A Central de Gestão Administrativa e Financeira saiu da demonstração: banco Postgres em projeto Supabase exclusivo, autenticação por e-mail/senha, RLS separando **Empresa × Particular**, cadastro de contas com parcelas, registro de pagamento, 3 relatórios e exportação XLSX/PDF funcionando (D-041). O restante da plataforma **segue como demonstração com dado fictício, mas agora atrás do mesmo login** — ver [CLAUDE.md](CLAUDE.md) §6.
 
@@ -15,7 +19,7 @@
 | Item | Estado |
 |---|---|
 | Fundação documental (Sprint Zero) | ✅ Completa |
-| **Central Financeira** (`/financeiro`) | ✅ **Sistema real** (D-041): Supabase exclusivo, login, RLS, contas → parcelas → pagamentos, 3 relatórios, exportação XLSX/PDF. Requer aplicar `supabase/migrations/0001_central_financeira.sql` e configurar as env vars |
+| **Central Financeira** (`/financeiro`) | ✅ **Sistema real** (D-041): Supabase exclusivo, login, RLS, contas → parcelas → pagamentos, 3 relatórios, exportação XLSX/PDF. Grupo→Classificação, Histórico, exportação contábil em grão de pagamento e Documentos/anexos com Storage (D-047). Migrations `0001` a `0004` **todas aplicadas** no banco real; requer as env vars configuradas |
 | Backend / banco / autenticação | ✅ Existem **apenas** na Central Financeira; demais módulos seguem sem backend |
 | Stack técnica do `frontend/` | ✅ Next.js + React + TypeScript + Tailwind v4 + shadcn/ui + Lucide + Motion + next-themes (D-007, D-018) |
 | Design tokens próprios (paleta, tipografia) | ✅ Implementados (D-010) |

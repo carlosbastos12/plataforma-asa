@@ -9,6 +9,7 @@ import {
   FileDown,
   FileSpreadsheet,
   MoreVertical,
+  Paperclip,
   Pencil,
   Ban,
   Trash2,
@@ -31,6 +32,7 @@ import { RegistrarPagamentoDialog } from "./registrar-pagamento-dialog";
 import { EditarContaDialog } from "./editar-conta-dialog";
 import { RemoverContaDialog } from "./remover-conta-dialog";
 import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
+import { DocumentosContaDialog } from "./documentos-conta-dialog";
 import { formatarData, formatarMoeda } from "@/lib/financeiro/formato";
 import { calcularIndicadores } from "@/lib/financeiro/indicadores";
 import { aplicarFiltros, FILTROS_VAZIOS, type FiltrosContas } from "@/lib/financeiro/filtros";
@@ -41,6 +43,7 @@ import type {
   Estabelecimento,
   Fornecedor,
   LinhaParcela,
+  ModeloHistorico,
   NaturezaConta,
   TipoDespesaParticular,
 } from "@/lib/financeiro/tipos";
@@ -54,6 +57,8 @@ interface Props {
   fornecedores: Fornecedor[];
   /** Tipos de despesa particular do usuário logado (D-044). */
   tiposDespesaParticular?: TipoDespesaParticular[];
+  /** Modelos de texto para o campo Histórico (D-047). */
+  modelosHistorico?: ModeloHistorico[];
   podeParticular: boolean;
 }
 
@@ -65,11 +70,13 @@ export function ContasView({
   bancos,
   fornecedores,
   tiposDespesaParticular = [],
+  modelosHistorico = [],
   podeParticular,
 }: Props) {
   const [filtros, setFiltros] = useState<FiltrosContas>(FILTROS_VAZIOS);
   const [parcelaEmPagamento, setParcelaEmPagamento] = useState<LinhaParcela | null>(null);
   const [contaEmEdicaoId, setContaEmEdicaoId] = useState<string | null>(null);
+  const [contaDocumentosId, setContaDocumentosId] = useState<string | null>(null);
   const [acaoRemocao, setAcaoRemocao] = useState<{ linha: LinhaParcela; modo: "remover" | "cancelar" } | null>(null);
 
   const visiveis = useMemo(() => aplicarFiltros(linhas, filtros), [linhas, filtros]);
@@ -174,6 +181,7 @@ export function ContasView({
                 estabelecimentos={estabelecimentos}
                 fornecedores={fornecedores}
                 tiposDespesaParticular={tiposDespesaParticular}
+                modelosHistorico={modelosHistorico}
                 podeParticular={podeParticular}
                 naturezaInicial={natureza}
                 rotulo={ehParticular ? "Nova conta particular" : "Nova conta"}
@@ -269,6 +277,9 @@ export function ContasView({
                                 <DropdownMenuItem onClick={() => setContaEmEdicaoId(l.conta_id)}>
                                   <Pencil className="size-4" /> Editar conta
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setContaDocumentosId(l.conta_id)}>
+                                  <Paperclip className="size-4" /> Documentos
+                                </DropdownMenuItem>
                                 {contasComPagamento.has(l.conta_id) ? (
                                   <DropdownMenuItem
                                     variant="destructive"
@@ -309,8 +320,10 @@ export function ContasView({
         estabelecimentos={estabelecimentos}
         fornecedores={fornecedores}
         tiposDespesaParticular={tiposDespesaParticular}
+        modelosHistorico={modelosHistorico}
         aoFechar={() => setContaEmEdicaoId(null)}
       />
+      <DocumentosContaDialog contaId={contaDocumentosId} aoFechar={() => setContaDocumentosId(null)} />
       <RemoverContaDialog alvo={acaoRemocao} aoFechar={() => setAcaoRemocao(null)} />
     </div>
   );

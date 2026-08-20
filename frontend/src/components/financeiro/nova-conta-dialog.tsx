@@ -6,15 +6,7 @@ import { toast } from "sonner";
 import { Plus, Building2, User, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
@@ -28,6 +20,7 @@ import {
   type Classificacao,
   type Estabelecimento,
   type Fornecedor,
+  type ModeloHistorico,
   type NaturezaConta,
   type Periodicidade,
   type TipoDespesaParticular,
@@ -41,6 +34,8 @@ interface Props {
   fornecedores: Fornecedor[];
   /** Tipos de despesa particular do usuário logado (D-044) — só usados quando natureza = particular. */
   tiposDespesaParticular?: TipoDespesaParticular[];
+  /** Modelos de texto para o campo Histórico (D-047) — só usados quando natureza = empresa. */
+  modelosHistorico?: ModeloHistorico[];
   bancos?: Banco[];
   /** Só quem tem permissão vê a opção "Particular". */
   podeParticular: boolean;
@@ -71,6 +66,7 @@ export function NovaContaDialog({
   estabelecimentos,
   fornecedores,
   tiposDespesaParticular = [],
+  modelosHistorico = [],
   podeParticular,
   naturezaInicial,
   rotulo = "Nova conta",
@@ -87,11 +83,13 @@ export function NovaContaDialog({
   const [valor, setValor] = useState("");
   const [vencimento, setVencimento] = useState(hojeISO());
   const [dataDocumento, setDataDocumento] = useState("");
+  const [grupoSelecionado, setGrupoSelecionado] = useState("");
   const [classificacaoId, setClassificacaoId] = useState("");
   const [estabelecimentoId, setEstabelecimentoId] = useState("");
   const [tipoDespesaParticularId, setTipoDespesaParticularId] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [historico, setHistorico] = useState("");
 
   const [qtdParcelas, setQtdParcelas] = useState("1");
   const [parcelas, setParcelas] = useState<LinhaParcelaForm[]>([]);
@@ -119,24 +117,39 @@ export function NovaContaDialog({
       // Campos exclusivos de empresa somem da tela — limpa para não
       // gravar um vínculo que a pessoa não vê mais e não escolheu.
       setEstabelecimentoId("");
+      setGrupoSelecionado("");
       setClassificacaoId("");
       setFornecedorCnpj("");
       setNumeroDocumento("");
       setDataDocumento("");
+      setHistorico("");
     } else {
       setTipoDespesaParticularId("");
     }
   }
 
-  const gruposClassificacao = useMemo(() => {
-    const mapa = new Map<string, Classificacao[]>();
-    for (const c of classificacoes) {
-      const lista = mapa.get(c.grupo) ?? [];
-      lista.push(c);
-      mapa.set(c.grupo, lista);
+  /**
+   * Grupo → Classificação (D-047, Etapa 1): a lista de grupos vem na
+   * ordem em que `classificacoes` chega (consulta já ordena por grupo —
+   * `consultas.ts` — o que coincide com a ordem alfabética real:
+   * ADMINISTRATIVAS, FINANCEIRAS, FUNCIONÁRIOS/PESSOAL, IMPOSTOS, OUTRAS).
+   * A pessoa escolhe o grupo primeiro; só então a Classificação mostra as
+   * opções daquele grupo — nunca as 96 juntas.
+   */
+  const gruposDisponiveis = useMemo(() => Array.from(new Set(classificacoes.map((c) => c.grupo))), [classificacoes]);
+  const classificacoesDoGrupo = useMemo(
+    () => classificacoes.filter((c) => c.grupo === grupoSelecionado),
+    [classificacoes, grupoSelecionado]
+  );
+
+  function escolherGrupo(novoGrupo: string) {
+    setGrupoSelecionado(novoGrupo);
+    // A classificação escolhida antes pertencia a outro grupo — não faz
+    // sentido continuar selecionada.
+    if (classificacaoId && !classificacoes.some((c) => c.id === classificacaoId && c.grupo === novoGrupo)) {
+      setClassificacaoId("");
     }
-    return Array.from(mapa.entries());
-  }, [classificacoes]);
+  }
 
   const classificacaoEscolhida = classificacoes.find((c) => c.id === classificacaoId);
 
@@ -174,11 +187,13 @@ export function NovaContaDialog({
     setValor("");
     setVencimento(hojeISO());
     setDataDocumento("");
+    setGrupoSelecionado("");
     setClassificacaoId("");
     setEstabelecimentoId("");
     setTipoDespesaParticularId("");
     setFormaPagamento("");
     setObservacoes("");
+    setHistorico("");
     setQtdParcelas("1");
     setParcelas([]);
     setRecorrente(false);
@@ -225,6 +240,7 @@ export function NovaContaDialog({
         tipoDespesaParticularId: ehParticular ? tipoDespesaParticularId : "",
         formaPagamento,
         observacoes,
+        historico: ehParticular ? "" : historico,
         recorrente,
         recorrenciaTipo: recorrente ? recorrenciaTipo : "",
         periodicidade: recorrente ? periodicidade : "",
@@ -494,39 +510,60 @@ export function NovaContaDialog({
               )}
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              <label className={rotuloCampo}>Classificação</label>
-              <Select value={classificacaoId} onValueChange={(v) => setClassificacaoId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Escolha a classificação">
-                    {() => {
-                      if (!classificacaoEscolhida) return "Escolha a classificação";
-                      return (
-                        classificacaoEscolhida.nome +
-                        (classificacaoEscolhida.confirmacao_pendente ? " (a confirmar)" : "")
-                      );
-                    }}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {gruposClassificacao.map(([grupo, itens]) => (
-                    <SelectGroup key={grupo}>
-                      <SelectLabel>{grupo}</SelectLabel>
-                      {itens.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                          {c.confirmacao_pendente ? " (a confirmar)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-              {classificacaoEscolhida?.confirmacao_pendente && (
-                <p className="text-[11px] leading-snug text-warning">
-                  O enquadramento contábil desta classificação ainda será confirmado com a contabilidade.
-                </p>
-              )}
+            // Grupo → Classificação (D-047, Etapa 1): dois selects em
+            // sequência, não um só agrupado — a pessoa escolhe o grupo
+            // contábil primeiro, e só então vê as classificações daquele
+            // grupo, nunca as 96 juntas.
+            <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className={rotuloCampo}>Grupo contábil</label>
+                <Select value={grupoSelecionado} onValueChange={(v) => escolherGrupo(v ?? "")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Escolha o grupo">{() => grupoSelecionado || "Escolha o grupo"}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gruposDisponiveis.map((grupo) => (
+                      <SelectItem key={grupo} value={grupo}>
+                        {grupo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={rotuloCampo}>Classificação</label>
+                <Select
+                  value={classificacaoId}
+                  onValueChange={(v) => setClassificacaoId(v ?? "")}
+                  disabled={!grupoSelecionado}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={grupoSelecionado ? "Escolha a classificação" : "Escolha o grupo primeiro"}>
+                      {() => {
+                        if (!classificacaoEscolhida) return grupoSelecionado ? "Escolha a classificação" : "Escolha o grupo primeiro";
+                        return (
+                          classificacaoEscolhida.nome +
+                          (classificacaoEscolhida.confirmacao_pendente ? " (a confirmar)" : "")
+                        );
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {classificacoesDoGrupo.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                        {c.confirmacao_pendente ? " (a confirmar)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {classificacaoEscolhida?.confirmacao_pendente && (
+                  <p className="text-[11px] leading-snug text-warning">
+                    O enquadramento contábil desta classificação ainda será confirmado com a contabilidade.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -570,6 +607,37 @@ export function NovaContaDialog({
             <label className={rotuloCampo}>Observações</label>
             <Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Opcional" />
           </div>
+
+          {!ehParticular && (
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label className={rotuloCampo}>Histórico</label>
+              <div className="flex flex-col gap-1.5 sm:flex-row">
+                <Input
+                  value={historico}
+                  onChange={(e) => setHistorico(e.target.value)}
+                  placeholder="Texto para a exportação contábil — opcional"
+                  className="flex-1"
+                />
+                {modelosHistorico.length > 0 && (
+                  <Select value="" onValueChange={(v) => v && setHistorico(v)}>
+                    <SelectTrigger className="w-full sm:w-52">
+                      <SelectValue placeholder="Usar um modelo…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelosHistorico.map((m) => (
+                        <SelectItem key={m.id} value={m.texto}>
+                          {m.texto}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Escolher um modelo preenche o campo — complete como precisar (ex.: número da NF).
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ---- Recorrência ---- */}

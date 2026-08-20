@@ -14,23 +14,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
 import { StatusParcelaBadge } from "./status-parcela-badge";
 import { formatarData, formatarMoeda, mesCorrente } from "@/lib/financeiro/formato";
 import { agruparPor, calcularIndicadores } from "@/lib/financeiro/indicadores";
-import { exportarContasPdf, exportarContasXlsx } from "@/lib/financeiro/exportacoes";
-import type { LinhaParcela } from "@/lib/financeiro/tipos";
+import {
+  exportarContasPdf,
+  exportarContasXlsx,
+  exportarFechamentoContabilPdf,
+  exportarFechamentoContabilXlsx,
+} from "@/lib/financeiro/exportacoes";
+import type { LinhaPagamento, LinhaParcela } from "@/lib/financeiro/tipos";
 import { cn } from "@/lib/utils";
 
 type Aba = "empresa" | "particular" | "fechamento";
 
 interface Props {
   linhas: LinhaParcela[];
+  /** Grão de pagamento (D-047) — fonte da exportação do fechamento contábil. */
+  pagamentos: LinhaPagamento[];
   podeParticular: boolean;
 }
 
-export function RelatoriosView({ linhas, podeParticular }: Props) {
+export function RelatoriosView({ linhas, pagamentos, podeParticular }: Props) {
   const inicial = mesCorrente();
   const [aba, setAba] = useState<Aba>("empresa");
   const [de, setDe] = useState(inicial.inicio);
@@ -45,6 +53,23 @@ export function RelatoriosView({ linhas, podeParticular }: Props) {
   // nada com natureza "particular" atravessa para o lado da empresa.
   const daEmpresa = useMemo(() => noPeriodo.filter((l) => l.natureza === "empresa"), [noPeriodo]);
   const particulares = useMemo(() => noPeriodo.filter((l) => l.natureza === "particular"), [noPeriodo]);
+
+  // Filtro por DATA DE PAGAMENTO, não por vencimento — de propósito,
+  // diferente do filtro acima. O fechamento contábil é "o que foi pago
+  // neste período", não "o que venceu neste período" (mesma lógica da
+  // planilha real: a aba "AGOSTO 2026" reúne os pagamentos feitos em
+  // agosto, não as contas com vencimento em agosto).
+  const pagamentosDaEmpresaNoPeriodo = useMemo(
+    () =>
+      pagamentos.filter(
+        (p) =>
+          p.natureza === "empresa" &&
+          !p.cancelada &&
+          (!de || p.data_pagamento >= de) &&
+          (!ate || p.data_pagamento <= ate)
+      ),
+    [pagamentos, de, ate]
+  );
 
   const periodoTexto = `${formatarData(de)} a ${formatarData(ate)}`;
 
@@ -110,7 +135,12 @@ export function RelatoriosView({ linhas, podeParticular }: Props) {
       )}
 
       {aba === "fechamento" && (
-        <Fechamento linhas={daEmpresa} periodo={periodoTexto} quantidadeParticulares={particulares.length} />
+        <Fechamento
+          linhas={daEmpresa}
+          pagamentos={pagamentosDaEmpresaNoPeriodo}
+          periodo={periodoTexto}
+          quantidadeParticulares={particulares.length}
+        />
       )}
     </div>
   );
@@ -257,12 +287,51 @@ function TabelaSimples({ linhas }: { linhas: LinhaParcela[] }) {
 
 /* --------------------------------------------------------------------- */
 
+/**
+ * Conteúdo da ajuda desta tela. Fica separado do JSX de propósito: é
+ * texto de produto, revisado por quem entende do negócio, não parte da
+ * montagem visual. Linguagem do dia a dia — nada de termo técnico.
+ */
+const AJUDA_FECHAMENTO: TopicoAjuda[] = [
+  {
+    titulo: "Período",
+    texto:
+      "Define quais pagamentos entram no fechamento. Entram os que foram pagos dentro das datas escolhidas — não os que venceram no período.",
+  },
+  {
+    titulo: "Pendências",
+    texto:
+      "Aviso do que ainda falta preencher antes de enviar: uma conta sem classificação, sem número de nota ou um pagamento sem o banco informado. Se aparecer alguma, corrija na tela de Contas a Pagar e volte aqui.",
+  },
+  {
+    titulo: "Histórico",
+    texto:
+      "É o texto que a contabilidade lê para saber a que se refere cada pagamento. Ao cadastrar ou editar a conta, você escolhe um modelo pronto e completa com a informação que faltar — o número da nota, por exemplo.",
+    exemplo: "Pg.Despesa Ref. NF 4587",
+  },
+  {
+    titulo: "XLSX",
+    texto: "Gera a planilha com os pagamentos do período — é este o arquivo que você envia para a contabilidade.",
+  },
+  {
+    titulo: "PDF",
+    texto: "Gera a mesma lista em formato de leitura, para você conferir na tela ou imprimir antes de enviar.",
+  },
+  {
+    titulo: "E as contas particulares?",
+    texto:
+      "Nunca entram aqui. O fechamento reúne apenas contas da empresa — as particulares ficam de fora automaticamente, sem você precisar fazer nada.",
+  },
+];
+
 function Fechamento({
   linhas,
+  pagamentos,
   periodo,
   quantidadeParticulares,
 }: {
   linhas: LinhaParcela[];
+  pagamentos: LinhaPagamento[];
   periodo: string;
   quantidadeParticulares: number;
 }) {
@@ -278,13 +347,13 @@ function Fechamento({
 
   const porGrupo = agruparPor(linhas, (l) => l.classificacao_grupo);
   const total = linhas.reduce((a, l) => a + l.parcela_valor, 0);
+  const totalPagoNoPeriodo = pagamentos.reduce((a, p) => a + p.valor_pago, 0);
 
   const ctx = {
     titulo: "Fechamento Contábil",
     arquivo: "fechamento_contabil",
     periodo,
     aviso: "Contém exclusivamente contas da EMPRESA. Contas particulares foram excluídas automaticamente.",
-    comResumoGerencial: true,
   };
 
   return (
@@ -295,12 +364,17 @@ function Fechamento({
           subtitle={`Período ${periodo} — somente contas da empresa.`}
           action={
             <div className="flex items-center gap-2">
+              <ComoFunciona
+                titulo="Fechamento para a Contabilidade"
+                resumo="Esta tela prepara os pagamentos da empresa para você enviar à contabilidade — já conferidos e no formato que o escritório espera receber."
+                topicos={AJUDA_FECHAMENTO}
+              />
               <Button
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                disabled={linhas.length === 0}
-                onClick={() => exportarContasXlsx(linhas, ctx)}
+                disabled={pagamentos.length === 0}
+                onClick={() => exportarFechamentoContabilXlsx(pagamentos, ctx)}
               >
                 <FileSpreadsheet className="size-3.5" /> XLSX
               </Button>
@@ -308,8 +382,8 @@ function Fechamento({
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                disabled={linhas.length === 0}
-                onClick={() => exportarContasPdf(linhas, ctx)}
+                disabled={pagamentos.length === 0}
+                onClick={() => exportarFechamentoContabilPdf(pagamentos, ctx)}
               >
                 <FileDown className="size-3.5" /> PDF
               </Button>
@@ -330,11 +404,22 @@ function Fechamento({
             </div>
           </div>
 
+          {/* Distinção importante (D-047): a lista abaixo mostra as
+              OBRIGAÇÕES do período (por vencimento) para checar pendências;
+              o botão XLSX/PDF exporta os PAGAMENTOS de fato realizados no
+              período (por data de pagamento) — é esse o formato que a
+              contabilidade usa, uma linha por pagamento, igual à planilha
+              real do escritório contábil. */}
+          <p className="rounded-lg bg-info-soft px-3 py-2 text-[12px] leading-relaxed text-info">
+            A exportação XLSX/PDF lista os <strong>pagamentos realizados</strong> no período — não as contas
+            vencidas. É o formato que a contabilidade usa (uma linha por pagamento).
+          </p>
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Indicador rotulo="Contas no fechamento" valor={String(linhas.length)} />
-            <Indicador rotulo="Valor total" valor={formatarMoeda(total)} />
-            <Indicador rotulo="Grupos contábeis" valor={String(porGrupo.length)} />
-            <Indicador rotulo="Pendências" valor={String(pendencias.reduce((a, p) => a + p.itens.length, 0))} />
+            <Indicador rotulo="Valor total (vencimento)" valor={formatarMoeda(total)} />
+            <Indicador rotulo="Pagamentos no período" valor={String(pagamentos.length)} />
+            <Indicador rotulo="Pago no período" valor={formatarMoeda(totalPagoNoPeriodo)} />
           </div>
 
           {/* Verificação antes do fechamento (§32 do documento do cliente) */}

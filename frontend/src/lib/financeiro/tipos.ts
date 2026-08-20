@@ -69,6 +69,39 @@ export interface Classificacao {
   confirmacao_pendente: boolean;
 }
 
+/**
+ * Modelo de texto para o campo `historico` de uma conta — catálogo
+ * extraído da coluna "Base do Histórico" da planilha real do escritório
+ * contábil (D-047). Serve só como ponto de partida: o campo de registro
+ * continua sendo texto livre, editável depois de escolhido um modelo.
+ */
+export interface ModeloHistorico {
+  id: string;
+  texto: string;
+}
+
+export type TipoDocumento = "nf" | "boleto" | "comprovante" | "outro";
+
+export const TIPO_DOCUMENTO_LABEL: Record<TipoDocumento, string> = {
+  nf: "Nota Fiscal",
+  boleto: "Boleto",
+  comprovante: "Comprovante de pagamento",
+  outro: "Outro",
+};
+
+/** Um arquivo anexado a uma conta (NF, boleto, comprovante...) — D-047, Etapa 4. */
+export interface Documento {
+  id: string;
+  conta_id: string;
+  parcela_id: string | null;
+  pagamento_id: string | null;
+  tipo: TipoDocumento;
+  nome: string;
+  storage_path: string | null;
+  tamanho_bytes: number | null;
+  criado_em: string;
+}
+
 export interface Estabelecimento {
   id: string;
   nome: string;
@@ -145,6 +178,8 @@ export interface LinhaParcela {
   bancos_utilizados: string | null;
   status: StatusParcela;
   dias_em_atraso: number;
+  /** Texto contábil do lançamento (D-047) — NÃO é auditoria; ver comentário na migration 0004. */
+  historico: string | null;
 }
 
 /**
@@ -164,5 +199,57 @@ export function normalizarLinha(bruta: Record<string, unknown>): LinhaParcela {
     total_multa: num(bruta.total_multa),
     total_desconto: num(bruta.total_desconto),
     dias_em_atraso: num(bruta.dias_em_atraso),
+  };
+}
+
+/**
+ * Uma linha da view `vw_pagamentos_completo` (D-047) — grão de
+ * PAGAMENTO, não de parcela. É a fonte da exportação para a
+ * contabilidade (Etapa 3): a planilha real do escritório contábil tem
+ * uma linha por pagamento, não por parcela — uma parcela paga em duas
+ * vezes precisa virar duas linhas na exportação, cada uma com sua
+ * própria data e banco. `vw_parcelas_completo` (acima) continua sendo a
+ * fonte de "o que devo": ali os pagamentos de uma parcela são somados
+ * num total, porque para esse propósito o que importa é o saldo, não o
+ * histórico de cada evento de pagamento.
+ */
+export interface LinhaPagamento {
+  pagamento_id: string;
+  parcela_id: string;
+  conta_id: string;
+  parcela_numero: number;
+  parcela_total: number;
+  data_pagamento: string;
+  natureza: NaturezaConta;
+  descricao: string;
+  numero_documento: string | null;
+  historico: string | null;
+  observacoes: string | null;
+  cancelada: boolean;
+  fornecedor_nome: string | null;
+  fornecedor_cnpj: string | null;
+  estabelecimento_nome: string | null;
+  classificacao_grupo: string | null;
+  classificacao_nome: string | null;
+  banco_nome: string | null;
+  forma_pagamento: string | null;
+  valor_inicial: number;
+  juros: number;
+  multa: number;
+  desconto: number;
+  valor_pago: number;
+}
+
+export function normalizarLinhaPagamento(bruta: Record<string, unknown>): LinhaPagamento {
+  const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
+  return {
+    ...(bruta as unknown as LinhaPagamento),
+    parcela_numero: num(bruta.parcela_numero),
+    parcela_total: num(bruta.parcela_total),
+    valor_inicial: num(bruta.valor_inicial),
+    juros: num(bruta.juros),
+    multa: num(bruta.multa),
+    desconto: num(bruta.desconto),
+    valor_pago: num(bruta.valor_pago),
   };
 }

@@ -46,6 +46,7 @@ export default async function ContasParticularesPage() {
         bancos={dados.bancos}
         fornecedores={dados.fornecedores}
         tiposDespesaParticular={tiposDespesaParticular}
+        modelosHistorico={dados.modelosHistorico}
         podeParticular
       />
     </div>

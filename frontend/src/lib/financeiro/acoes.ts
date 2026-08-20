@@ -1,10 +1,36 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { SUPABASE_CONFIGURADO } from "@/lib/supabase/config";
-import type { NaturezaConta, Periodicidade, TipoRecorrencia } from "./tipos";
+import type { Documento, NaturezaConta, Periodicidade, TipoDocumento, TipoRecorrencia } from "./tipos";
+
+/** Bucket privado dos anexos financeiros (D-047/Etapa 4) — ver migration 0004. */
+const BUCKET_DOCUMENTOS = "financeiro-documentos";
+const TAMANHO_MAXIMO_BYTES = 15 * 1024 * 1024; // 15 MB
+const TIPOS_DOCUMENTO_VALIDOS = new Set<TipoDocumento>(["nf", "boleto", "comprovante", "outro"]);
+
+/**
+ * Content-Type de reserva, por extensão. O navegador quase sempre informa
+ * o tipo do arquivo escolhido, mas quando não informa o Storage grava um
+ * tipo genérico — e aí o "Visualizar" faria o navegador baixar em vez de
+ * abrir. Só cobre as extensões aceitas pelo formulário.
+ */
+const TIPO_MIME_POR_EXTENSAO: Record<string, string> = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+function tipoMime(arquivo: File): string | undefined {
+  if (arquivo.type) return arquivo.type;
+  const extensao = arquivo.name.split(".").pop()?.toLowerCase() ?? "";
+  return TIPO_MIME_POR_EXTENSAO[extensao];
+}
 
 export interface Resultado {
   ok: boolean;
@@ -43,6 +69,8 @@ export interface NovaContaInput {
   valorAproximado?: number | null;
   ocorrencias?: number | null;
   observacoes?: string;
+  /** Texto contábil do lançamento (D-047) — só para natureza empresa, igual à classificação. */
+  historico?: string;
   parcelas: { numero: number; valor: number; vencimento: string }[];
 }
 
@@ -68,7 +96,7 @@ export async function criarConta(dados: NovaContaInput): Promise<Resultado> {
       : [{ numero: 1, valor: dados.valorInicial, vencimento: dados.vencimento }];
 
   const supabase = await criarClienteServidor();
-  const { error } = await supabase.rpc("criar_conta_com_parcelas", {
+  const parametros = {
     p_natureza: dados.natureza,
     p_descricao: dados.descricao.trim(),
     p_valor_inicial: dados.valorInicial,
@@ -89,7 +117,22 @@ export async function criarConta(dados: NovaContaInput): Promise<Resultado> {
     p_valor_aproximado: dados.valorAproximado ?? null,
     p_ocorrencias: dados.ocorrencias ?? null,
     p_observacoes: ouNulo(dados.observacoes),
-  });
+    p_historico: ouNulo(dados.historico),
+  };
+
+  let { error } = await supabase.rpc("criar_conta_com_parcelas", parametros);
+
+  // A RPC é resolvida pela assinatura completa: se a migration 0004
+  // (que acrescenta p_historico) ainda não foi aplicada nesta
+  // instalação, o Postgres não encontra função nenhuma que bata com os
+  // parâmetros (PGRST202) — e travaria o cadastro de conta por causa de
+  // um campo novo e opcional. Tenta de novo sem ele, mesmo espírito da
+  // tolerância a migration pendente já usada em D-044.
+  if (error?.code === "PGRST202") {
+    const { p_historico: _historicoDescartado, ...semHistorico } = parametros;
+    void _historicoDescartado;
+    ({ error } = await supabase.rpc("criar_conta_com_parcelas", semHistorico));
+  }
 
   if (error) return { ok: false, erro: error.message };
 
@@ -118,6 +161,7 @@ export interface AtualizarContaInput {
   valorAproximado?: number | null;
   ocorrencias?: number | null;
   observacoes?: string;
+  historico?: string;
 }
 
 export interface ContaDetalhe {
@@ -139,6 +183,7 @@ export interface ContaDetalhe {
   valorAproximado: number | null;
   ocorrencias: number | null;
   observacoes: string;
+  historico: string;
   cancelada: boolean;
 }
 
@@ -153,13 +198,22 @@ export async function buscarConta(contaId: string): Promise<{ ok: true; conta: C
   if (!SUPABASE_CONFIGURADO) return semBanco;
 
   const supabase = await criarClienteServidor();
-  const { data, error } = await supabase
+  const camposBase =
+    "id, natureza, descricao, vencimento, numero_documento, data_documento, estabelecimento_id, classificacao_id, tipo_despesa_particular_id, forma_pagamento, recorrente, recorrencia_tipo, periodicidade, valor_aproximado, ocorrencias, observacoes, cancelada, fornecedores(nome, cnpj)";
+
+  let { data, error } = await supabase
     .from("contas")
-    .select(
-      "id, natureza, descricao, vencimento, numero_documento, data_documento, estabelecimento_id, classificacao_id, tipo_despesa_particular_id, forma_pagamento, recorrente, recorrencia_tipo, periodicidade, valor_aproximado, ocorrencias, observacoes, cancelada, fornecedores(nome, cnpj)"
-    )
+    .select(`${camposBase}, historico`)
     .eq("id", contaId)
     .maybeSingle();
+
+  // Mesma tolerância de `criarConta`: sem a migration 0004, a coluna
+  // `historico` não existe (42703) — tenta de novo sem ela em vez de
+  // impedir a edição da conta inteira por causa de um campo que ainda
+  // não existe nesta instalação.
+  if (error?.code === "42703") {
+    ({ data, error } = await supabase.from("contas").select(camposBase).eq("id", contaId).maybeSingle());
+  }
 
   if (error) return { ok: false, erro: error.message };
   if (!data) return { ok: false, erro: "Conta não encontrada (ou você não tem acesso a ela)." };
@@ -188,6 +242,7 @@ export async function buscarConta(contaId: string): Promise<{ ok: true; conta: C
       valorAproximado: data.valor_aproximado,
       ocorrencias: data.ocorrencias,
       observacoes: data.observacoes ?? "",
+      historico: data.historico ?? "",
       cancelada: data.cancelada ?? false,
     },
   };
@@ -238,26 +293,38 @@ export async function atualizarConta(dados: AtualizarContaInput): Promise<Result
     }
   }
 
-  const { error } = await supabase
-    .from("contas")
-    .update({
-      fornecedor_id: fornecedorId,
-      descricao: dados.descricao.trim(),
-      vencimento: dados.vencimento,
-      numero_documento: ouNulo(dados.numeroDocumento),
-      data_documento: ouNulo(dados.dataDocumento),
-      estabelecimento_id: ouNulo(dados.estabelecimentoId),
-      classificacao_id: ouNulo(dados.classificacaoId),
-      tipo_despesa_particular_id: ouNulo(dados.tipoDespesaParticularId),
-      forma_pagamento: ouNulo(dados.formaPagamento),
-      recorrente: dados.recorrente ?? false,
-      recorrencia_tipo: dados.recorrente ? ouNulo(dados.recorrenciaTipo) : null,
-      periodicidade: dados.recorrente ? ouNulo(dados.periodicidade) : null,
-      valor_aproximado: dados.recorrente ? (dados.valorAproximado ?? null) : null,
-      ocorrencias: dados.recorrente ? (dados.ocorrencias ?? null) : null,
-      observacoes: ouNulo(dados.observacoes),
-    })
-    .eq("id", dados.contaId);
+  const patch: Record<string, unknown> = {
+    fornecedor_id: fornecedorId,
+    descricao: dados.descricao.trim(),
+    vencimento: dados.vencimento,
+    numero_documento: ouNulo(dados.numeroDocumento),
+    data_documento: ouNulo(dados.dataDocumento),
+    estabelecimento_id: ouNulo(dados.estabelecimentoId),
+    classificacao_id: ouNulo(dados.classificacaoId),
+    tipo_despesa_particular_id: ouNulo(dados.tipoDespesaParticularId),
+    forma_pagamento: ouNulo(dados.formaPagamento),
+    recorrente: dados.recorrente ?? false,
+    recorrencia_tipo: dados.recorrente ? ouNulo(dados.recorrenciaTipo) : null,
+    periodicidade: dados.recorrente ? ouNulo(dados.periodicidade) : null,
+    valor_aproximado: dados.recorrente ? (dados.valorAproximado ?? null) : null,
+    ocorrencias: dados.recorrente ? (dados.ocorrencias ?? null) : null,
+    observacoes: ouNulo(dados.observacoes),
+    historico: ouNulo(dados.historico),
+  };
+
+  let { error } = await supabase.from("contas").update(patch).eq("id", dados.contaId);
+
+  // Mesma tolerância de `criarConta`/`buscarConta`: sem a migration 0004
+  // a coluna não existe — tenta salvar o resto sem travar a edição da
+  // conta por causa de um campo novo. Testado ao vivo contra o projeto
+  // real: PATCH/UPDATE devolve PGRST204 ("column not found in schema
+  // cache"), diferente do 42703 que o SELECT devolve para o mesmo caso
+  // (buscarConta, acima) — os dois são tolerados aqui.
+  if (error?.code === "42703" || error?.code === "PGRST204") {
+    const { historico: _historicoDescartado, ...semHistorico } = patch;
+    void _historicoDescartado;
+    ({ error } = await supabase.from("contas").update(semHistorico).eq("id", dados.contaId));
+  }
 
   if (error) return { ok: false, erro: error.message };
 
@@ -477,4 +544,185 @@ export async function excluirTipoDespesaParticular(id: string): Promise<Resultad
 
   revalidatePath("/financeiro/particulares");
   return { ok: true };
+}
+
+/* ===================================================================
+ * DOCUMENTOS E ANEXOS (D-047, Etapa 4)
+ *
+ * A tabela `documentos` existe desde a migration 0001 mas não tinha uso
+ * pela aplicação. O RLS dela (`documentos_all`) já cobre a mesma regra
+ * de `contas` — natureza empresa ou `pode_ver_particular()` — então
+ * nenhuma política nova é necessária na tabela em si; só o Storage
+ * (bucket `financeiro-documentos`, migration 0004) precisou de RLS
+ * própria, porque `storage.objects` é uma tabela separada.
+ * =================================================================== */
+
+/**
+ * Lista os documentos de uma conta (NF, boletos, comprovantes...), mais
+ * recentes primeiro. Chamada sob demanda pelo diálogo de documentos —
+ * não entra em `carregarFinanceiro` porque a maioria das contas nunca é
+ * aberta nessa tela na mesma sessão.
+ */
+export async function carregarDocumentos(contaId: string): Promise<Documento[]> {
+  if (!SUPABASE_CONFIGURADO) return [];
+
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase
+    .from("documentos")
+    .select("id, conta_id, parcela_id, pagamento_id, tipo, nome, storage_path, tamanho_bytes, criado_em")
+    .eq("conta_id", contaId)
+    .order("criado_em", { ascending: false });
+
+  if (error) return [];
+  return (data ?? []) as Documento[];
+}
+
+/**
+ * Envia um arquivo para o Storage e registra a linha em `documentos`.
+ * Recebe FormData (não um objeto tipado) porque o valor vem de um
+ * `<input type="file">` no cliente — é o formato nativo do Next.js para
+ * Server Actions que carregam arquivo (ver AGENTS.md: `bodySizeLimit`
+ * precisou ser ampliado em `next.config.ts`, o padrão é só 1 MB).
+ */
+export async function enviarDocumento(formData: FormData): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const contaId = String(formData.get("contaId") ?? "").trim();
+  const tipoBruto = String(formData.get("tipo") ?? "outro") as TipoDocumento;
+  const tipo = TIPOS_DOCUMENTO_VALIDOS.has(tipoBruto) ? tipoBruto : "outro";
+  const parcelaId = ouNulo(formData.get("parcelaId") as string | null);
+  const pagamentoId = ouNulo(formData.get("pagamentoId") as string | null);
+  const arquivo = formData.get("arquivo");
+
+  if (!contaId) return { ok: false, erro: "Conta não informada." };
+  if (!(arquivo instanceof File) || arquivo.size === 0) {
+    return { ok: false, erro: "Selecione um arquivo." };
+  }
+  if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
+    return { ok: false, erro: "Arquivo maior que 15 MB. Reduza o tamanho e tente novamente." };
+  }
+
+  const supabase = await criarClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, erro: "Sessão expirada. Entre novamente." };
+
+  // Convenção de caminho '{conta_id}/{uuid}-{nome}' — é o que a política
+  // de RLS do bucket usa para decidir quem pode ler/gravar (migration
+  // 0004): o primeiro segmento do caminho tem que ser uma conta que o
+  // usuário já pode ver, mesma regra de `contas_select`.
+  const nomeSaneado = arquivo.name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
+  const caminho = `${contaId}/${randomUUID()}-${nomeSaneado}`;
+
+  const { error: erroUpload } = await supabase.storage
+    .from(BUCKET_DOCUMENTOS)
+    .upload(caminho, arquivo, { contentType: tipoMime(arquivo), upsert: false });
+
+  if (erroUpload) {
+    // Instalação sem a migration 0004 (bucket ainda não existe): mensagem
+    // específica em vez do erro técnico do Storage.
+    if (/bucket not found/i.test(erroUpload.message)) {
+      return {
+        ok: false,
+        erro: "O armazenamento de documentos ainda não foi configurado nesta instalação (migration pendente).",
+      };
+    }
+    return { ok: false, erro: `Não foi possível enviar o arquivo: ${erroUpload.message}` };
+  }
+
+  const { error: erroInsercao } = await supabase.from("documentos").insert({
+    conta_id: contaId,
+    parcela_id: parcelaId,
+    pagamento_id: pagamentoId,
+    tipo,
+    nome: arquivo.name,
+    storage_path: caminho,
+    tamanho_bytes: arquivo.size,
+    criado_por: user.id,
+  });
+
+  if (erroInsercao) {
+    // Não deixa o arquivo órfão no Storage se o registro na tabela falhou.
+    await supabase.storage.from(BUCKET_DOCUMENTOS).remove([caminho]);
+    return { ok: false, erro: erroInsercao.message };
+  }
+
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/particulares");
+  return { ok: true };
+}
+
+/** Remove um documento — do Storage e da tabela. O RLS garante que só quem pode ver a conta chega até aqui. */
+export async function excluirDocumento(documentoId: string): Promise<Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const supabase = await criarClienteServidor();
+  const { data, error: erroBusca } = await supabase
+    .from("documentos")
+    .select("storage_path")
+    .eq("id", documentoId)
+    .maybeSingle();
+
+  if (erroBusca) return { ok: false, erro: erroBusca.message };
+  if (!data) return { ok: false, erro: "Documento não encontrado (ou você não tem acesso a ele)." };
+
+  const { error: erroExclusao } = await supabase.from("documentos").delete().eq("id", documentoId);
+  if (erroExclusao) return { ok: false, erro: erroExclusao.message };
+
+  if (data.storage_path) {
+    await supabase.storage.from(BUCKET_DOCUMENTOS).remove([data.storage_path]);
+  }
+
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/particulares");
+  return { ok: true };
+}
+
+/**
+ * Como o link temporário deve se comportar ao ser aberto:
+ *
+ * - `visualizar` — o arquivo é servido com o próprio `Content-Type`
+ *   (`Content-Disposition: inline`), então o navegador ABRE o PDF ou a
+ *   imagem para leitura, em vez de perguntar onde salvar. Se o sistema do
+ *   usuário usa o Adobe Reader como visualizador padrão, é o sistema que
+ *   decide isso — nada aqui força um programa específico.
+ * - `baixar` — força `Content-Disposition: attachment` com o nome
+ *   original, que é o que salva o arquivo no computador.
+ *
+ * Antes existia só o segundo modo, e por isso o ícone "Visualizar" pedia
+ * para salvar o arquivo. Nada muda em segurança entre os dois: o bucket
+ * continua privado, o link continua assinado e expirando em 2 minutos, e
+ * o RLS continua sendo quem decide se este usuário pode ler o documento.
+ */
+export type ModoDocumento = "visualizar" | "baixar";
+
+/**
+ * Gera um link temporário (2 minutos) para abrir ou baixar um documento.
+ * O bucket é privado — não existe URL pública permanente para um arquivo
+ * financeiro; cada acesso exige sessão autenticada e passa pelo RLS.
+ */
+export async function obterUrlDocumento(
+  documentoId: string,
+  modo: ModoDocumento = "visualizar"
+): Promise<{ ok: true; url: string } | Resultado> {
+  if (!SUPABASE_CONFIGURADO) return semBanco;
+
+  const supabase = await criarClienteServidor();
+  const { data, error: erroBusca } = await supabase
+    .from("documentos")
+    .select("storage_path, nome")
+    .eq("id", documentoId)
+    .maybeSingle();
+
+  if (erroBusca) return { ok: false, erro: erroBusca.message };
+  if (!data?.storage_path) return { ok: false, erro: "Documento não encontrado (ou você não tem acesso a ele)." };
+
+  const { data: assinado, error: erroUrl } = await supabase.storage
+    .from(BUCKET_DOCUMENTOS)
+    .createSignedUrl(data.storage_path, 120, modo === "baixar" ? { download: data.nome } : undefined);
+
+  if (erroUrl || !assinado) return { ok: false, erro: erroUrl?.message ?? "Não foi possível gerar o link." };
+
+  return { ok: true, url: assinado.signedUrl };
 }

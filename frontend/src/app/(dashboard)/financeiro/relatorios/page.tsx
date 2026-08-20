@@ -26,7 +26,11 @@ export default async function RelatoriosFinanceirosPage() {
       {!dados.configurado ? (
         <AvisoConfiguracao />
       ) : (
-        <RelatoriosView linhas={dados.linhas} podeParticular={dados.perfil?.pode_ver_particular ?? false} />
+        <RelatoriosView
+          linhas={dados.linhas}
+          pagamentos={dados.pagamentos}
+          podeParticular={dados.perfil?.pode_ver_particular ?? false}
+        />
       )}
     </div>
   );

@@ -6,15 +6,7 @@ import { toast } from "sonner";
 import { Building2, Loader2, Save, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
 import { atualizarConta, buscarConta, type ContaDetalhe } from "@/lib/financeiro/acoes";
@@ -25,6 +17,7 @@ import {
   type Classificacao,
   type Estabelecimento,
   type Fornecedor,
+  type ModeloHistorico,
   type Periodicidade,
   type TipoDespesaParticular,
   type TipoRecorrencia,
@@ -38,6 +31,7 @@ interface Props {
   estabelecimentos: Estabelecimento[];
   fornecedores: Fornecedor[];
   tiposDespesaParticular?: TipoDespesaParticular[];
+  modelosHistorico?: ModeloHistorico[];
   aoFechar: () => void;
 }
 
@@ -49,6 +43,7 @@ export function EditarContaDialog({
   estabelecimentos,
   fornecedores,
   tiposDespesaParticular = [],
+  modelosHistorico = [],
   aoFechar,
 }: Props) {
   const router = useRouter();
@@ -64,11 +59,13 @@ export function EditarContaDialog({
   const [dataDocumento, setDataDocumento] = useState("");
   const [descricao, setDescricao] = useState("");
   const [vencimento, setVencimento] = useState("");
+  const [grupoSelecionado, setGrupoSelecionado] = useState("");
   const [classificacaoId, setClassificacaoId] = useState("");
   const [estabelecimentoId, setEstabelecimentoId] = useState("");
   const [tipoDespesaParticularId, setTipoDespesaParticularId] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [historico, setHistorico] = useState("");
   const [recorrente, setRecorrente] = useState(false);
   const [recorrenciaTipo, setRecorrenciaTipo] = useState<TipoRecorrencia | "">("");
   const [periodicidade, setPeriodicidade] = useState<Periodicidade | "">("");
@@ -95,11 +92,16 @@ export function EditarContaDialog({
       setDataDocumento(c.dataDocumento);
       setDescricao(c.descricao);
       setVencimento(c.vencimento);
+      // Grupo é derivado da classificação já gravada — não vem do banco
+      // separado, porque `classificacao_id` já basta para achar o grupo
+      // na lista carregada (mesma fonte usada no cadastro).
+      setGrupoSelecionado(classificacoes.find((cl) => cl.id === c.classificacaoId)?.grupo ?? "");
       setClassificacaoId(c.classificacaoId);
       setEstabelecimentoId(c.estabelecimentoId);
       setTipoDespesaParticularId(c.tipoDespesaParticularId);
       setFormaPagamento(c.formaPagamento);
       setObservacoes(c.observacoes);
+      setHistorico(c.historico);
       setRecorrente(c.recorrente);
       setRecorrenciaTipo(c.recorrenciaTipo);
       setPeriodicidade(c.periodicidade);
@@ -109,12 +111,18 @@ export function EditarContaDialog({
   }, [contaId]);
 
   const ehParticular = conta?.natureza === "particular";
-  const gruposClassificacao = classificacoes.reduce((mapa, c) => {
-    const lista = mapa.get(c.grupo) ?? [];
-    lista.push(c);
-    mapa.set(c.grupo, lista);
-    return mapa;
-  }, new Map<string, Classificacao[]>());
+
+  // Grupo → Classificação (D-047, Etapa 1) — mesma lógica do cadastro.
+  const gruposDisponiveis = Array.from(new Set(classificacoes.map((c) => c.grupo)));
+  const classificacoesDoGrupo = classificacoes.filter((c) => c.grupo === grupoSelecionado);
+
+  function escolherGrupo(novoGrupo: string) {
+    setGrupoSelecionado(novoGrupo);
+    if (classificacaoId && !classificacoes.some((c) => c.id === classificacaoId && c.grupo === novoGrupo)) {
+      setClassificacaoId("");
+    }
+  }
+
   const classificacaoEscolhida = classificacoes.find((c) => c.id === classificacaoId);
   const tiposAtivos = tiposDespesaParticular.filter((t) => t.ativo);
 
@@ -147,6 +155,7 @@ export function EditarContaDialog({
         tipoDespesaParticularId: ehParticular ? tipoDespesaParticularId : "",
         formaPagamento,
         observacoes,
+        historico: ehParticular ? "" : historico,
         recorrente,
         recorrenciaTipo: recorrente ? recorrenciaTipo : "",
         periodicidade: recorrente ? periodicidade : "",
@@ -268,33 +277,51 @@ export function EditarContaDialog({
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-1.5">
-                  <label className={CAMPO}>Classificação</label>
-                  <Select value={classificacaoId} onValueChange={(v) => setClassificacaoId(v ?? "")}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Escolha a classificação">
-                        {() => {
-                          if (!classificacaoEscolhida) return "Escolha a classificação";
-                          return (
-                            classificacaoEscolhida.nome + (classificacaoEscolhida.confirmacao_pendente ? " (a confirmar)" : "")
-                          );
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {Array.from(gruposClassificacao.entries()).map(([grupo, itens]) => (
-                        <SelectGroup key={grupo}>
-                          <SelectLabel>{grupo}</SelectLabel>
-                          {itens.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nome}
-                              {c.confirmacao_pendente ? " (a confirmar)" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <label className={CAMPO}>Grupo contábil</label>
+                    <Select value={grupoSelecionado} onValueChange={(v) => escolherGrupo(v ?? "")}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Escolha o grupo">{() => grupoSelecionado || "Escolha o grupo"}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {gruposDisponiveis.map((grupo) => (
+                          <SelectItem key={grupo} value={grupo}>
+                            {grupo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className={CAMPO}>Classificação</label>
+                    <Select
+                      value={classificacaoId}
+                      onValueChange={(v) => setClassificacaoId(v ?? "")}
+                      disabled={!grupoSelecionado}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={grupoSelecionado ? "Escolha a classificação" : "Escolha o grupo primeiro"}>
+                          {() => {
+                            if (!classificacaoEscolhida)
+                              return grupoSelecionado ? "Escolha a classificação" : "Escolha o grupo primeiro";
+                            return (
+                              classificacaoEscolhida.nome + (classificacaoEscolhida.confirmacao_pendente ? " (a confirmar)" : "")
+                            );
+                          }}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {classificacoesDoGrupo.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                            {c.confirmacao_pendente ? " (a confirmar)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
 
@@ -338,6 +365,34 @@ export function EditarContaDialog({
                 <label className={CAMPO}>Observações</label>
                 <Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Opcional" />
               </div>
+
+              {!ehParticular && (
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className={CAMPO}>Histórico</label>
+                  <div className="flex flex-col gap-1.5 sm:flex-row">
+                    <Input
+                      value={historico}
+                      onChange={(e) => setHistorico(e.target.value)}
+                      placeholder="Texto para a exportação contábil — opcional"
+                      className="flex-1"
+                    />
+                    {modelosHistorico.length > 0 && (
+                      <Select value="" onValueChange={(v) => v && setHistorico(v)}>
+                        <SelectTrigger className="w-full sm:w-52">
+                          <SelectValue placeholder="Usar um modelo…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {modelosHistorico.map((m) => (
+                            <SelectItem key={m.id} value={m.texto}>
+                              {m.texto}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 rounded-xl border border-border p-3">

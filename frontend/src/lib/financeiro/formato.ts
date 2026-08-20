@@ -38,6 +38,13 @@ export function mesCorrente(): { inicio: string; fim: string } {
   };
 }
 
+/** Tamanho de arquivo em KB/MB, para a lista de documentos anexados (Etapa 4). */
+export function formatarTamanho(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function formatarCnpj(cnpj: string | null): string {
   if (!cnpj) return "—";
   const d = cnpj.replace(/\D/g, "");
