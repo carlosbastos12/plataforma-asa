@@ -132,7 +132,9 @@ export function Topbar({ contagens, usuario }: TopbarProps) {
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            {/* `w-auto`: por padrão o popup copia a largura do gatilho, que aqui
+                é só o avatar — estreito demais para o nome e a função caberem. */}
+            <DropdownMenuContent align="end" className="w-auto min-w-52">
               <DropdownMenuLabel className="flex flex-col gap-0.5 px-2 py-1.5">
                 <span className="text-sm font-semibold text-foreground">{usuario.nome}</span>
                 <span className="text-xs text-muted-foreground">{PAPEL_LABEL[usuario.papel]}</span>

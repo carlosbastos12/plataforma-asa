@@ -6,6 +6,17 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { cn } from "@/lib/utils"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
 
+/**
+ * Sinaliza que existe um <Menu.Group>/<Menu.RadioGroup> acima na árvore.
+ *
+ * O `Menu.GroupLabel` do Base UI lança exceção quando usado fora de um
+ * grupo, e um menu que quebra ao abrir derruba a página inteira. Como um
+ * rótulo solto (cabeçalho do menu) é um uso legítimo, `DropdownMenuLabel`
+ * consulta este contexto e só vira `GroupLabel` quando há de fato um grupo
+ * para rotular.
+ */
+const DentroDeGrupo = React.createContext(false)
+
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
 }
@@ -50,27 +61,42 @@ function DropdownMenuContent({
 }
 
 function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
-  return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+  return (
+    <DentroDeGrupo.Provider value={true}>
+      <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+    </DentroDeGrupo.Provider>
+  )
 }
 
+// `render` e o `style` em forma de função são extensões do Base UI que um
+// <div> puro não aceita — e um rótulo nunca precisou das duas. Tirá-las da
+// assinatura deixa as mesmas props válidas nos dois caminhos abaixo.
 function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: Omit<MenuPrimitive.GroupLabel.Props, "render" | "style"> & {
   inset?: boolean
+  style?: React.CSSProperties
 }) {
-  return (
-    <MenuPrimitive.GroupLabel
-      data-slot="dropdown-menu-label"
-      data-inset={inset}
-      className={cn(
-        "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
-        className
-      )}
-      {...props}
-    />
-  )
+  const emGrupo = React.useContext(DentroDeGrupo)
+  const compartilhado = {
+    "data-slot": "dropdown-menu-label",
+    "data-inset": inset,
+    className: cn(
+      "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
+      className
+    ),
+  }
+
+  // Sem grupo acima, o rótulo é o cabeçalho do próprio menu: um <div> com o
+  // mesmo `role` de apresentação que o Base UI aplicaria — sem a associação
+  // por aria-labelledby, que só faz sentido quando existe um grupo.
+  if (!emGrupo) {
+    return <div {...compartilhado} role="presentation" {...props} />
+  }
+
+  return <MenuPrimitive.GroupLabel {...compartilhado} {...props} />
 }
 
 function DropdownMenuItem({
@@ -181,10 +207,12 @@ function DropdownMenuCheckboxItem({
 
 function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
   return (
-    <MenuPrimitive.RadioGroup
-      data-slot="dropdown-menu-radio-group"
-      {...props}
-    />
+    <DentroDeGrupo.Provider value={true}>
+      <MenuPrimitive.RadioGroup
+        data-slot="dropdown-menu-radio-group"
+        {...props}
+      />
+    </DentroDeGrupo.Provider>
   )
 }
 
