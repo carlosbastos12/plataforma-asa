@@ -180,6 +180,11 @@ export interface LinhaParcela {
   dias_em_atraso: number;
   /** Texto contábil do lançamento (D-047) — NÃO é auditoria; ver comentário na migration 0004. */
   historico: string | null;
+  /**
+   * De onde a conta veio (migration 0005). Opcional porque a coluna só
+   * existe depois dessa migration — antes dela a view não devolve o campo.
+   */
+  origem?: "manual" | "planilha";
 }
 
 /**

@@ -4,6 +4,19 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Importador de despesas por planilha, primeira versão (2026-08-20)
+Novo botão **"Importar AutEM"** em Financeiro → Contas a Pagar (D-050). Nenhuma alteração em autenticação, proxy, RLS, Storage ou permissões:
+- **⚠️ O layout usado para homologação é FICTÍCIO.** Nenhum arquivo real de exportação de despesas da AutEM foi recebido até aqui — as colunas reconhecidas reproduzem apenas a lista de campos informada pelo Vitor. **O layout oficial ainda precisa ser validado com um arquivo real.**
+- **Fluxo em dois passos, sem exceção:** escolher arquivo → o sistema lê e mostra a prévia (novos / já existentes / possível duplicidade / com problema) → só depois de confirmar é que algo é gravado. A confirmação reenvia o arquivo e o servidor refaz a análise do zero: nada do que a tela calculou é aceito como verdade.
+- **Camada de mapeamento isolada** (`lib/importacao/mapeamento.ts`): colunas reconhecidas pelo NOME normalizado, não pela posição. Quando o arquivo real chegar, o ajuste é neste arquivo só. Não se assume nome de coluna, posição, número de abas, linha do cabeçalho nem formato de data.
+- **Leitor de XLSX próprio, sem dependência nova** — mesma razão do gerador que o projeto já tinha. Lê ZIP armazenado e deflate, shared strings, fórmulas, e usa `styles.xml` para reconhecer células de data. Roda só no servidor (confirmado: não aparece no bundle do cliente).
+- **Duplicidade em quatro níveis**, do mais forte ao mais fraco: identificador da origem → chave da importação anterior → CNPJ + documento + vencimento → fornecedor + valor + vencimento. **A coincidência fraca nunca bloqueia sozinha**: vira "Possível duplicidade — verificar", com caixa de seleção para você decidir. Repetição dentro do próprio arquivo também é pega.
+- **Reimportar não duplica e não apaga nada.** Lançamento já existente é pulado — a importação não atualiza conta nenhuma. Classificação, estabelecimento, histórico e anexos que você completou continuam intactos por construção.
+- **Categoria, Centro de custo e Tipo são avisados, não inventados**: aparecem como "sem correspondência no ASA" na prévia. Colunas desconhecidas são guardadas junto da conta, nunca descartadas.
+- **Valores e datas** usam o leitor em português corrigido em D-049, com a distinção certa entre célula numérica e de texto. Data que não dá para entender marca a linha como problema — nunca é importada em silêncio.
+- **Planilha de homologação fictícia** em `docs/homologacao/`, gerada por `scripts/gerar-planilha-homologacao.mjs`, com 12 linhas cobrindo caminho feliz, valores em milhar, parcelas, repetição e três tipos de problema.
+- **⚠️ Migration `0005_origem_importacao.sql` ainda NÃO aplicada** (sem token de gerência nesta sessão). Enquanto isso, o importador se **recusa a funcionar** e explica o motivo na tela — importar sem o registro de origem geraria duplicidade silenciosa numa próxima importação.
+
 ### Corrigido — Editar conta: valor total, leitura de números em português e bloqueios explicados (2026-08-20)
 Revisão campo a campo entre "Nova conta" e "Editar conta" (D-049). Nenhuma migration, RLS, autenticação ou permissão foi tocada:
 - **Corrigida a leitura de valores digitados em português** — o bug mais sério desta rodada. Todo campo de dinheiro usava `Number(texto.replace(",", "."))`, que troca só a primeira vírgula e não conhece separador de milhar: `"1.500,50"` virava `0` (daí a mensagem *"Informe um valor maior que zero"* com o campo preenchido) e, pior, **`"1.500"` virava `1,5` — gravando R$ 1,50 no lugar de R$ 1.500,00, sem erro nenhum na tela**. Afetava o valor da conta, o de cada parcela e, em "Registrar pagamento", valor pago/juros/multa/desconto. Substituído pelo leitor `paraNumero`, validado em 22 casos.

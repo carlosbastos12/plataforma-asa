@@ -33,6 +33,7 @@ import { EditarContaDialog } from "./editar-conta-dialog";
 import { RemoverContaDialog } from "./remover-conta-dialog";
 import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
 import { DocumentosContaDialog } from "./documentos-conta-dialog";
+import { ImportarPlanilhaDialog } from "./importar-planilha-dialog";
 import { formatarData, formatarMoeda } from "@/lib/financeiro/formato";
 import { calcularIndicadores } from "@/lib/financeiro/indicadores";
 import { aplicarFiltros, FILTROS_VAZIOS, type FiltrosContas } from "@/lib/financeiro/filtros";
@@ -175,6 +176,11 @@ export function ContasView({
               >
                 <FileDown className="size-3.5" /> PDF
               </Button>
+              {/* Só do lado Empresa: a importação traz a exportação do
+                  sistema da empresa e cria exclusivamente conta de
+                  empresa — conta particular continua sendo cadastrada à
+                  mão por quem é dona dela. */}
+              {!ehParticular && <ImportarPlanilhaDialog />}
               {ehParticular && <TiposDespesaParticularDialog tipos={tiposDespesaParticular} />}
               <NovaContaDialog
                 classificacoes={classificacoes}
