@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Building2, Loader2, Save, User } from "lucide-react";
+import { Building2, Info, Loader2, Lock, Save, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +22,8 @@ import {
   type TipoDespesaParticular,
   type TipoRecorrencia,
 } from "@/lib/financeiro/tipos";
+import { formatarMoeda, paraNumero } from "@/lib/financeiro/formato";
+import { podeCorrigirValor } from "@/lib/financeiro/regras";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -59,6 +61,7 @@ export function EditarContaDialog({
   const [dataDocumento, setDataDocumento] = useState("");
   const [descricao, setDescricao] = useState("");
   const [vencimento, setVencimento] = useState("");
+  const [valor, setValor] = useState("");
   const [grupoSelecionado, setGrupoSelecionado] = useState("");
   const [classificacaoId, setClassificacaoId] = useState("");
   const [estabelecimentoId, setEstabelecimentoId] = useState("");
@@ -92,6 +95,9 @@ export function EditarContaDialog({
       setDataDocumento(c.dataDocumento);
       setDescricao(c.descricao);
       setVencimento(c.vencimento);
+      // Vírgula, como se digita em português — o campo é lido de volta
+      // por `paraNumero`, que entende os dois formatos.
+      setValor(c.valorInicial > 0 ? String(c.valorInicial).replace(".", ",") : "");
       // Grupo é derivado da classificação já gravada — não vem do banco
       // separado, porque `classificacao_id` já basta para achar o grupo
       // na lista carregada (mesma fonte usada no cadastro).
@@ -126,6 +132,20 @@ export function EditarContaDialog({
   const classificacaoEscolhida = classificacoes.find((c) => c.id === classificacaoId);
   const tiposAtivos = tiposDespesaParticular.filter((t) => t.ativo);
 
+  // Mesma regra usada pela Server Action (`lib/financeiro/regras.ts`) —
+  // aqui só para antecipar a resposta e explicar o motivo na tela. Quem
+  // decide de fato é o servidor, relendo o estado atual da conta.
+  const vereditoValor = conta
+    ? podeCorrigirValor({
+        cancelada: conta.cancelada,
+        totalParcelas: conta.totalParcelas,
+        temPagamento: conta.temPagamento,
+      })
+    : { pode: false as const, motivo: "" };
+
+  const valorNum = paraNumero(valor);
+  const valorMudou = vereditoValor.pode && conta != null && Math.abs(valorNum - conta.valorInicial) > 0.005;
+
   function salvar() {
     if (!conta) return;
     if (!descricao.trim()) {
@@ -134,6 +154,10 @@ export function EditarContaDialog({
     }
     if (!vencimento) {
       toast.error("Informe o vencimento.");
+      return;
+    }
+    if (vereditoValor.pode && !(valorNum > 0)) {
+      toast.error("Informe um valor maior que zero.");
       return;
     }
     if (recorrente && (!recorrenciaTipo || !periodicidade)) {
@@ -160,6 +184,11 @@ export function EditarContaDialog({
         recorrenciaTipo: recorrente ? recorrenciaTipo : "",
         periodicidade: recorrente ? periodicidade : "",
         ocorrencias: recorrente && ocorrencias ? Number(ocorrencias) : null,
+        // Enviado sempre que a conta é de parcela única e sem pagamento
+        // — é esse caso que permite manter a parcela em dia com o
+        // cabeçalho (valor e vencimento). Em conta parcelada ou já paga
+        // segue `null`, e aí o servidor nem chega a tocar em `parcelas`.
+        valorInicial: vereditoValor.pode ? valorNum : null,
       });
 
       if (!r.ok) {
@@ -194,6 +223,15 @@ export function EditarContaDialog({
               {ehParticular ? <User className="size-3.5" /> : <Building2 className="size-3.5" />}
               {ehParticular ? "Conta particular" : "Conta da empresa"}
             </div>
+
+            {/* Natureza é a única coisa decidida de uma vez só no cadastro.
+                Antes ela simplesmente não aparecia como editável, sem
+                explicação — agora o motivo fica dito. */}
+            <p className="-mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-muted-foreground">
+              <Info className="mt-px size-3.5 shrink-0" />
+              Isto não muda depois de cadastrado: conta da empresa vai para o fechamento da contabilidade e
+              conta particular nunca vai. Para trocar, remova esta conta e cadastre de novo.
+            </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className={cn("flex flex-col gap-1.5", ehParticular && "sm:col-span-2")}>
@@ -249,6 +287,43 @@ export function EditarContaDialog({
               <div className="flex flex-col gap-1.5">
                 <label className={CAMPO}>Vencimento *</label>
                 <Input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} />
+                {conta.totalParcelas > 1 && (
+                  <p className="text-[11px] leading-snug text-muted-foreground">
+                    Esta conta tem {conta.totalParcelas} parcelas — cada uma mantém a sua própria data, que não
+                    muda por aqui.
+                  </p>
+                )}
+              </div>
+
+              {/* Valor total: editável só enquanto a conta é de parcela
+                  única e sem pagamento. Nos demais casos aparece do mesmo
+                  jeito, mas bloqueado e com o motivo escrito — em vez de
+                  simplesmente não existir no formulário, como antes. */}
+              <div className="flex flex-col gap-1.5">
+                <label className={CAMPO}>Valor total (R$){vereditoValor.pode && " *"}</label>
+                {vereditoValor.pode ? (
+                  <>
+                    <Input
+                      inputMode="decimal"
+                      value={valor}
+                      onChange={(e) => setValor(e.target.value)}
+                      placeholder="0,00"
+                    />
+                    {valorMudou && (
+                      <p className="text-[11px] leading-snug text-muted-foreground">
+                        Era {formatarMoeda(conta.valorInicial)} — a parcela desta conta será atualizada junto.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 text-sm text-muted-foreground tabular-nums">
+                      <Lock className="size-3.5 shrink-0" />
+                      {formatarMoeda(conta.valorInicial)}
+                    </div>
+                    <p className="text-[11px] leading-snug text-warning">{vereditoValor.motivo}</p>
+                  </>
+                )}
               </div>
             </div>
 
@@ -321,6 +396,13 @@ export function EditarContaDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    {/* Paridade com o cadastro: o aviso existia lá e não
+                        aqui, então quem editava não via a ressalva. */}
+                    {classificacaoEscolhida?.confirmacao_pendente && (
+                      <p className="text-[11px] leading-snug text-warning">
+                        O enquadramento contábil desta classificação ainda será confirmado com a contabilidade.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

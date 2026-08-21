@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TiposDespesaParticularDialog } from "./tipos-despesa-particular-dialog";
 import { criarConta } from "@/lib/financeiro/acoes";
-import { hojeISO, formatarMoeda } from "@/lib/financeiro/formato";
+import { hojeISO, formatarMoeda, paraNumero } from "@/lib/financeiro/formato";
 import {
   FORMAS_PAGAMENTO,
   PERIODICIDADES,
@@ -99,7 +99,7 @@ export function NovaContaDialog({
   const [periodicidade, setPeriodicidade] = useState<Periodicidade | "">("");
   const [ocorrencias, setOcorrencias] = useState("");
 
-  const valorNum = Number(valor.replace(",", ".")) || 0;
+  const valorNum = paraNumero(valor);
   const nParcelas = Math.max(Number(qtdParcelas) || 1, 1);
 
   /**
@@ -175,7 +175,7 @@ export function NovaContaDialog({
     );
   }
 
-  const somaParcelas = parcelas.reduce((a, p) => a + (Number(p.valor.replace(",", ".")) || 0), 0);
+  const somaParcelas = parcelas.reduce((a, p) => a + paraNumero(p.valor), 0);
   const divergenciaParcelas = parcelas.length > 0 && Math.abs(somaParcelas - valorNum) > 0.01;
 
   function limpar() {
@@ -247,7 +247,7 @@ export function NovaContaDialog({
         ocorrencias: recorrente && ocorrencias ? Number(ocorrencias) : null,
         parcelas: parcelas.map((p) => ({
           numero: p.numero,
-          valor: Number(p.valor.replace(",", ".")) || 0,
+          valor: paraNumero(p.valor),
           vencimento: p.vencimento,
         })),
       });

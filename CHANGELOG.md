@@ -4,6 +4,15 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Corrigido — Editar conta: valor total, leitura de números em português e bloqueios explicados (2026-08-20)
+Revisão campo a campo entre "Nova conta" e "Editar conta" (D-049). Nenhuma migration, RLS, autenticação ou permissão foi tocada:
+- **Corrigida a leitura de valores digitados em português** — o bug mais sério desta rodada. Todo campo de dinheiro usava `Number(texto.replace(",", "."))`, que troca só a primeira vírgula e não conhece separador de milhar: `"1.500,50"` virava `0` (daí a mensagem *"Informe um valor maior que zero"* com o campo preenchido) e, pior, **`"1.500"` virava `1,5` — gravando R$ 1,50 no lugar de R$ 1.500,00, sem erro nenhum na tela**. Afetava o valor da conta, o de cada parcela e, em "Registrar pagamento", valor pago/juros/multa/desconto. Substituído pelo leitor `paraNumero`, validado em 22 casos.
+- **"Valor total (R$)" agora existe em Editar conta.** Estava simplesmente ausente do formulário. É **editável enquanto a conta tem uma parcela e nenhum pagamento** — e nesse caso a parcela é atualizada junto com o cabeçalho. Nos demais casos aparece bloqueado, com o motivo escrito ("já possui pagamento registrado", "conta parcelada", "conta cancelada") em vez de sumir sem explicação.
+- **Vencimento passou a valer de verdade em conta de parcela única.** Antes, editar a data gravava só o cabeçalho e a tabela continuava mostrando a data antiga — a edição parecia não funcionar. Em conta parcelada nada muda (cada parcela mantém a sua data) e a tela agora diz isso.
+- **Natureza (Empresa × Particular) segue bloqueada, agora com o motivo na tela:** conta da empresa vai para o fechamento da contabilidade e conta particular nunca vai.
+- **Aviso "(a confirmar)" agora também na edição** — existia só no cadastro. Marca a classificação **Combustível**, cujo enquadramento contábil ainda precisa ser confirmado com a contabilidade (pendência de negócio registrada desde a 0001, não um defeito).
+- A regra de integridade vive em `lib/financeiro/regras.ts` e é aplicada **nos dois lados**: a tela usa para explicar, a Server Action usa para decidir, relendo o estado da conta no banco — o formulário nunca é a autoridade.
+
 ### Corrigido / Adicionado — Finalização das Etapas 1–4: usabilidade, ajuda contextual e navegação mais rápida (2026-08-20)
 Ajustes apontados no teste real das Etapas 1–4, sem nenhuma mudança de banco, RLS, autenticação ou permissão (D-048):
 - **Visualizar documento agora ABRE o arquivo** em vez de pedir para salvar. O link assinado passou a ter dois modos — `visualizar` (o navegador exibe o PDF/imagem) e `baixar` (salva no computador), agora em botões separados na lista. O bucket continua **privado** e o link continua assinado e expirando em **2 minutos**: nada mudou em segurança, só o cabeçalho de entrega do arquivo.

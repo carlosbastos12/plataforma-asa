@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { registrarPagamento } from "@/lib/financeiro/acoes";
-import { calcularValorPago, formatarMoeda, hojeISO } from "@/lib/financeiro/formato";
+import { calcularValorPago, formatarMoeda, hojeISO, paraNumero } from "@/lib/financeiro/formato";
 import { FORMAS_PAGAMENTO, type Banco, type LinhaParcela } from "@/lib/financeiro/tipos";
 
 interface Props {
@@ -33,7 +33,7 @@ export function RegistrarPagamentoDialog({ parcela, bancos, aoFechar }: Props) {
   const [formaPagamento, setFormaPagamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
-  const n = (v: string) => Number(v.replace(",", ".")) || 0;
+  const n = paraNumero;
   const base = valorInicial === "" ? saldo : n(valorInicial);
   const valorPago = calcularValorPago(base, n(juros), n(multa), n(desconto));
 

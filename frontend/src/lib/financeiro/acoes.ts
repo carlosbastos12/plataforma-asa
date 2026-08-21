@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { SUPABASE_CONFIGURADO } from "@/lib/supabase/config";
 import type { Documento, NaturezaConta, Periodicidade, TipoDocumento, TipoRecorrencia } from "./tipos";
+import { podeCorrigirValor } from "./regras";
 
 /** Bucket privado dos anexos financeiros (D-047/Etapa 4) — ver migration 0004. */
 const BUCKET_DOCUMENTOS = "financeiro-documentos";
@@ -162,6 +163,13 @@ export interface AtualizarContaInput {
   ocorrencias?: number | null;
   observacoes?: string;
   historico?: string;
+  /**
+   * Valor total da conta. `undefined`/`null` = não mexer — é assim que
+   * toda edição que não toca no valor continua se comportando. Quando
+   * vem preenchido, a regra de integridade abaixo é reconferida NO
+   * SERVIDOR antes de gravar; o formulário não decide isso sozinho.
+   */
+  valorInicial?: number | null;
 }
 
 export interface ContaDetalhe {
@@ -169,6 +177,11 @@ export interface ContaDetalhe {
   natureza: NaturezaConta;
   descricao: string;
   vencimento: string;
+  valorInicial: number;
+  /** Quantas parcelas a conta tem de fato (linhas em `parcelas`). */
+  totalParcelas: number;
+  /** true se qualquer parcela desta conta já recebeu pagamento. */
+  temPagamento: boolean;
   fornecedorNome: string;
   fornecedorCnpj: string;
   numeroDocumento: string;
@@ -198,8 +211,11 @@ export async function buscarConta(contaId: string): Promise<{ ok: true; conta: C
   if (!SUPABASE_CONFIGURADO) return semBanco;
 
   const supabase = await criarClienteServidor();
+  // `parcelas(id, pagamentos(id))` vem no MESMO pedido (embed do
+  // PostgREST, não uma consulta a mais): é o que diz se o valor da conta
+  // ainda pode ser corrigido com segurança — ver `podeCorrigirValor`.
   const camposBase =
-    "id, natureza, descricao, vencimento, numero_documento, data_documento, estabelecimento_id, classificacao_id, tipo_despesa_particular_id, forma_pagamento, recorrente, recorrencia_tipo, periodicidade, valor_aproximado, ocorrencias, observacoes, cancelada, fornecedores(nome, cnpj)";
+    "id, natureza, descricao, vencimento, valor_inicial, numero_documento, data_documento, estabelecimento_id, classificacao_id, tipo_despesa_particular_id, forma_pagamento, recorrente, recorrencia_tipo, periodicidade, valor_aproximado, ocorrencias, observacoes, cancelada, fornecedores(nome, cnpj), parcelas(id, pagamentos(id))";
 
   let { data, error } = await supabase
     .from("contas")
@@ -221,6 +237,8 @@ export async function buscarConta(contaId: string): Promise<{ ok: true; conta: C
   const fornecedorBruto = data.fornecedores as { nome: string; cnpj: string | null } | { nome: string; cnpj: string | null }[] | null;
   const fornecedor = Array.isArray(fornecedorBruto) ? fornecedorBruto[0] : fornecedorBruto;
 
+  const parcelasBrutas = (data.parcelas ?? []) as { id: string; pagamentos: { id: string }[] | null }[];
+
   return {
     ok: true,
     conta: {
@@ -228,6 +246,9 @@ export async function buscarConta(contaId: string): Promise<{ ok: true; conta: C
       natureza: data.natureza,
       descricao: data.descricao,
       vencimento: data.vencimento,
+      valorInicial: Number(data.valor_inicial ?? 0),
+      totalParcelas: parcelasBrutas.length,
+      temPagamento: parcelasBrutas.some((p) => (p.pagamentos ?? []).length > 0),
       fornecedorNome: fornecedor?.nome ?? "",
       fornecedorCnpj: fornecedor?.cnpj ?? "",
       numeroDocumento: data.numero_documento ?? "",
@@ -249,10 +270,16 @@ export async function buscarConta(contaId: string): Promise<{ ok: true; conta: C
 }
 
 /**
- * Atualiza os dados de uma conta já cadastrada. Não mexe em parcelas,
- * pagamentos nem na natureza (Empresa/Particular é uma decisão feita uma
- * vez no cadastro — mudar depois abriria a porta para uma conta
- * particular "virar" empresarial por engano, ou vice-versa).
+ * Atualiza os dados de uma conta já cadastrada.
+ *
+ * Não mexe na natureza: Empresa/Particular é uma decisão feita uma vez
+ * no cadastro — mudar depois abriria a porta para uma conta particular
+ * "virar" empresarial por engano, ou vice-versa, e uma delas entra no
+ * fechamento contábil enquanto a outra nunca pode entrar.
+ *
+ * Também não mexe em pagamentos, em hipótese alguma. A única coisa que
+ * pode tocar em `parcelas` é a correção de valor/vencimento de uma conta
+ * de parcela única e sem pagamento — ver `podeCorrigirValor`.
  */
 export async function atualizarConta(dados: AtualizarContaInput): Promise<Resultado> {
   if (!SUPABASE_CONFIGURADO) return semBanco;
@@ -263,6 +290,51 @@ export async function atualizarConta(dados: AtualizarContaInput): Promise<Result
   }
 
   const supabase = await criarClienteServidor();
+
+  // ---- Correção de valor: só entra aqui quando de fato foi pedida ----
+  // Nada disto roda numa edição comum (descrição, classificação...), então
+  // o caminho normal continua com o mesmo número de consultas de antes.
+  let parcelaUnicaParaSincronizar: { id: string; valorAnterior: number; vencimentoAnterior: string } | null = null;
+
+  if (dados.valorInicial != null) {
+    if (!(dados.valorInicial > 0)) return { ok: false, erro: "O valor precisa ser maior que zero." };
+
+    // Reconferência no servidor. O formulário já esconde o campo quando
+    // não pode, mas quem manda é esta checagem: uma requisição forjada
+    // não consegue alterar o valor de uma conta já paga ou parcelada.
+    const { data: estado, error: erroEstado } = await supabase
+      .from("contas")
+      .select("cancelada, parcelas(id, valor, vencimento, pagamentos(id))")
+      .eq("id", dados.contaId)
+      .maybeSingle();
+
+    if (erroEstado) return { ok: false, erro: erroEstado.message };
+    if (!estado) return { ok: false, erro: "Conta não encontrada (ou você não tem acesso a ela)." };
+
+    const parcelas = (estado.parcelas ?? []) as {
+      id: string;
+      valor: number | string;
+      vencimento: string;
+      pagamentos: { id: string }[] | null;
+    }[];
+
+    const veredito = podeCorrigirValor({
+      cancelada: estado.cancelada ?? false,
+      totalParcelas: parcelas.length,
+      temPagamento: parcelas.some((p) => (p.pagamentos ?? []).length > 0),
+    });
+
+    if (!veredito.pode) return { ok: false, erro: veredito.motivo };
+
+    const unica = parcelas[0];
+    if (unica) {
+      parcelaUnicaParaSincronizar = {
+        id: unica.id,
+        valorAnterior: Number(unica.valor ?? 0),
+        vencimentoAnterior: unica.vencimento,
+      };
+    }
+  }
 
   // Favorecido/Fornecedor: mesma lógica de "reaproveita se existe, cria
   // se novo" da RPC de criação (§3/§46) — feita aqui em duas consultas
@@ -312,6 +384,28 @@ export async function atualizarConta(dados: AtualizarContaInput): Promise<Result
     historico: ouNulo(dados.historico),
   };
 
+  if (dados.valorInicial != null) patch.valor_inicial = dados.valorInicial;
+
+  // A parcela única anda junto com o cabeçalho: é `parcelas.valor` e
+  // `parcelas.vencimento` que decidem o status e aparecem em todas as
+  // listas e relatórios. Gravar só o cabeçalho tornava a edição
+  // invisível na tela — a pessoa mudava a data, salvava, e a tabela
+  // continuava mostrando a data antiga.
+  //
+  // Gravada ANTES do cabeçalho de propósito: se o UPDATE de `contas`
+  // falhar depois, esta linha é devolvida ao estado anterior logo
+  // abaixo, e a conta nunca fica divergente de si mesma. O gatilho de
+  // auditoria só registra o que mudou de fato (`is distinct from`), então
+  // reescrever um valor igual ao atual não polui o histórico.
+  if (parcelaUnicaParaSincronizar && dados.valorInicial != null) {
+    const { error: erroParcela } = await supabase
+      .from("parcelas")
+      .update({ valor: dados.valorInicial, vencimento: dados.vencimento })
+      .eq("id", parcelaUnicaParaSincronizar.id);
+
+    if (erroParcela) return { ok: false, erro: erroParcela.message };
+  }
+
   let { error } = await supabase.from("contas").update(patch).eq("id", dados.contaId);
 
   // Mesma tolerância de `criarConta`/`buscarConta`: sem a migration 0004
@@ -326,7 +420,20 @@ export async function atualizarConta(dados: AtualizarContaInput): Promise<Result
     ({ error } = await supabase.from("contas").update(semHistorico).eq("id", dados.contaId));
   }
 
-  if (error) return { ok: false, erro: error.message };
+  if (error) {
+    // Cabeçalho não gravou: devolve a parcela ao que era, para a conta
+    // não ficar com total e parcela contando histórias diferentes.
+    if (parcelaUnicaParaSincronizar) {
+      await supabase
+        .from("parcelas")
+        .update({
+          valor: parcelaUnicaParaSincronizar.valorAnterior,
+          vencimento: parcelaUnicaParaSincronizar.vencimentoAnterior,
+        })
+        .eq("id", parcelaUnicaParaSincronizar.id);
+    }
+    return { ok: false, erro: error.message };
+  }
 
   revalidatePath("/financeiro");
   revalidatePath("/financeiro/particulares");
