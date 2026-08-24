@@ -13,6 +13,7 @@ import {
   Pencil,
   Ban,
   Trash2,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/ui/kpi-card";
@@ -24,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/empty-state";
 import { StatusParcelaBadge } from "./status-parcela-badge";
 import { FiltrosContasBar } from "./filtros-contas";
@@ -217,10 +219,46 @@ export function ContasView({
             />
           ) : (
             <div className="-mx-5 -mb-5 overflow-hidden">
-              <Table>
+              {/*
+                Larguras fixas por coluna (colgroup + table-fixed), não
+                largura "no tamanho do conteúdo": cada coluna recebe uma
+                fatia percentual da tabela, então a tabela inteira sempre
+                cabe na largura disponível — de um monitor grande a uma
+                janela ocupando só metade dele. O texto livre (Fornecedor,
+                Documento, Classificação) trunca com "…" quando a fatia é
+                pequena demais; nenhuma informação é removida, só passa a
+                caber inteira num detalhe (editar conta) quando não cabe
+                na linha.
+
+                As fatias foram calibradas pelo conteúdo real de cada
+                coluna (medido, não estimado): o rótulo mais longo de
+                status ("Parcialmente paga"), o par de botões de Ações, a
+                data completa, o valor em moeda com casas decimais. Nenhuma
+                delas pode encolher mais sem cortar informação, o que
+                define `min-w-[850px]` como piso — abaixo disso não dá
+                para encolher mais sem virar ilegível ou sobrepor
+                elementos, e aí sim aparece a rolagem horizontal, só em
+                telas muito pequenas.
+              */}
+              <Table
+                className="table-fixed min-w-[850px] [&_td]:px-1.5 [&_th]:truncate [&_th]:px-1.5 min-[1600px]:[&_td]:px-4 min-[1600px]:[&_th]:px-4"
+              >
+                <colgroup>
+                  <col className="w-[14%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[6%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[8%]" />
+                </colgroup>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fornecedor / Descrição</TableHead>
+                    {/* "Fornecedor" basta: a descrição aparece logo abaixo
+                        do nome, dentro da própria célula. */}
+                    <TableHead>Fornecedor</TableHead>
                     <TableHead>Documento</TableHead>
                     <TableHead>Classificação</TableHead>
                     <TableHead>Parcela</TableHead>
@@ -236,48 +274,63 @@ export function ContasView({
                     const quitada = l.status === "paga" || l.status === "cancelada";
                     return (
                       <TableRow key={l.parcela_id}>
-                        <TableCell className="max-w-64">
+                        <TableCell>
                           <p className="truncate text-sm font-medium text-foreground">
                             {l.fornecedor_nome ?? "Sem fornecedor"}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">{l.descricao}</p>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{l.numero_documento ?? "—"}</TableCell>
-                        <TableCell className="max-w-40 truncate text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground">
+                          {l.numero_documento ?? "—"}
+                        </TableCell>
+                        <TableCell className="truncate text-sm text-muted-foreground">
                           {l.classificacao_nome ?? "—"}
                         </TableCell>
                         <TableCell className="text-sm tabular-nums text-muted-foreground">
                           {l.parcela_numero}/{l.parcela_total}
                         </TableCell>
                         <TableCell className="text-sm tabular-nums">
-                          {formatarData(l.parcela_vencimento)}
+                          <p>{formatarData(l.parcela_vencimento)}</p>
+                          {/* Atraso embaixo da data, não do lado: assim a
+                              coluna não precisa reservar espaço horizontal
+                              extra só para os dias em atraso. */}
                           {l.dias_em_atraso > 0 && (
-                            <span className="ml-1.5 text-xs font-medium text-destructive">
-                              +{l.dias_em_atraso}d
-                            </span>
+                            <p className="text-xs font-medium text-destructive">+{l.dias_em_atraso}d</p>
                           )}
                         </TableCell>
                         <TableCell className="text-right text-sm font-semibold tabular-nums">
                           {formatarMoeda(l.parcela_valor)}
                         </TableCell>
                         <TableCell>
-                          <StatusParcelaBadge status={l.status} />
+                          <StatusParcelaBadge status={l.status} compacto />
                         </TableCell>
                         <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                           {l.total_pago > 0 ? formatarMoeda(l.total_pago) : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1">
                             {!quitada && (
-                              <Button variant="outline" size="sm" onClick={() => setParcelaEmPagamento(l)}>
-                                Pagar
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <Button
+                                      variant="outline"
+                                      size="icon-xs"
+                                      aria-label="Registrar pagamento"
+                                      onClick={() => setParcelaEmPagamento(l)}
+                                    />
+                                  }
+                                >
+                                  <Banknote className="size-3.5" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top">Registrar pagamento</TooltipContent>
+                              </Tooltip>
                             )}
                             <DropdownMenu>
                               <DropdownMenuTrigger
-                                render={<Button variant="ghost" size="icon" className="size-8" aria-label="Mais ações da conta" />}
+                                render={<Button variant="ghost" size="icon-xs" aria-label="Mais ações da conta" />}
                               >
-                                <MoreVertical className="size-4" />
+                                <MoreVertical className="size-3.5" />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setContaEmEdicaoId(l.conta_id)}>
