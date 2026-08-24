@@ -14,9 +14,15 @@ import { paraNumero } from "../financeiro/formato";
 import { CELULA_VAZIA, serialParaIso, type AbaLida, type CelulaLida } from "./xlsx-leitor";
 import {
   CAMPOS_OBRIGATORIOS,
+  CATALOGOS_VAZIOS,
   DEFINICAO_POR_CAMPO,
+  acharClassificacao,
+  acharGrupo,
   reconhecerColuna,
+  resolverContaBancaria,
+  traduzirFormaPagamento,
   type CampoAsa,
+  type Catalogos,
 } from "./mapeamento";
 import type {
   ColunaReconhecida,
@@ -28,6 +34,22 @@ import type {
 
 /* ======================= leitura de cada tipo ======================= */
 
+/**
+ * Marcador de "campo vazio" usado pela origem.
+ *
+ * A exportação real da AutEM não deixa a célula em branco quando não há
+ * valor: escreve uma sequência de hifens (`------`). Sem reconhecer
+ * isso, o leitor de datas tentava interpretar os hifens, falhava, e as
+ * 36 linhas ainda não liquidadas eram marcadas como PROBLEMA — quando na
+ * verdade "sem liquidação" é a informação correta e esperada.
+ */
+function ehMarcadorDeVazio(texto: string): boolean {
+  const t = texto.trim();
+  if (t === "") return true;
+  if (/^[-–—_.]+$/.test(t)) return true;
+  return /^(n\/?a|nao informado|não informado|sem informacao|sem informação)$/i.test(t);
+}
+
 function lerTexto(celula: CelulaLida | undefined): string | null {
   if (!celula) return null;
   if (celula.tipo === "numero") {
@@ -37,7 +59,7 @@ function lerTexto(celula: CelulaLida | undefined): string | null {
   }
   if (celula.tipo === "data") return celula.valor;
   const t = celula.valor.trim();
-  return t === "" ? null : t;
+  return t === "" || ehMarcadorDeVazio(t) ? null : t;
 }
 
 /**
@@ -55,12 +77,47 @@ export function lerNumero(celula: CelulaLida | undefined): number | null {
   if (celula.tipo === "numero") return celula.valor;
   if (celula.tipo === "data") return null;
   const t = celula.valor.trim();
-  if (t === "") return null;
+  if (t === "" || ehMarcadorDeVazio(t)) return null;
   // Contabilidade costuma escrever negativo entre parênteses.
   const negativo = /^\(.*\)$/.test(t);
   const n = paraNumero(negativo ? t.slice(1, -1) : t);
   if (n === 0 && !/\d/.test(t)) return null;
   return negativo ? -n : n;
+}
+
+/**
+ * Converte um valor da origem para o jeito do ASA.
+ *
+ * A AutEM exporta despesa como número NEGATIVO (`-104,13` significa uma
+ * despesa de R$ 104,13); o ASA guarda o valor da obrigação em positivo.
+ * A conversão é só o módulo — o número original, com o sinal como veio,
+ * é preservado em `origem_dados` e nunca se perde.
+ *
+ * Antes desta conversão as 68 linhas do primeiro arquivo real eram todas
+ * recusadas com "o valor precisa ser maior que zero".
+ */
+export function valorParaAsa(bruto: number | null): number | null {
+  if (bruto == null) return null;
+  return Math.abs(bruto);
+}
+
+/**
+ * Lê a indicação de parcela no formato "N/M" — `08/12` é a parcela 8 de
+ * 12. É assim que a coluna "Recorrência" da AutEM vem: apesar do nome,
+ * ela **não** é periodicidade, e sim a posição da parcela.
+ *
+ * Devolve `null` quando o texto não tem esse formato (aí a conta entra
+ * como parcela única, que é o comportamento de sempre).
+ */
+export function lerParcela(texto: string | null): { numero: number; total: number } | null {
+  if (!texto) return null;
+  const m = /^\s*(\d{1,3})\s*[/de]{1,3}\s*(\d{1,3})\s*$/i.exec(texto);
+  if (!m) return null;
+  const numero = Number(m[1]);
+  const total = Number(m[2]);
+  if (!Number.isFinite(numero) || !Number.isFinite(total)) return null;
+  if (numero < 1 || total < 1 || numero > total) return null;
+  return { numero, total };
 }
 
 const MESES_PT: Record<string, string> = {
@@ -106,7 +163,10 @@ export function lerData(celula: CelulaLida | undefined): string | null | undefin
   }
 
   const t = celula.valor.trim();
-  if (t === "") return undefined;
+  // "Sem data" é informação legítima, não erro: a exportação escreve um
+  // marcador (`------`) em vez de deixar a célula vazia. Sem esta linha,
+  // toda conta ainda não liquidada virava "problema" e não importava.
+  if (t === "" || ehMarcadorDeVazio(t)) return undefined;
 
   const mIso = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/.exec(t);
   if (mIso) {
@@ -204,21 +264,13 @@ function acharCabecalho(abas: AbaLida[]): CabecalhoEncontrado | null {
  * decide é a pessoa.
  */
 export function montarChave(dados: DadosOrigem): string | null {
-  const cnpj = apenasDigitos(dados.cnpj);
-  const doc = dados.numeroDocumento?.trim().toUpperCase();
-  const fornecedor = dados.fornecedor?.trim().toLowerCase();
-  const valor = dados.valor != null ? dados.valor.toFixed(2) : null;
-
-  // Inclui parcela E vencimento. A parcela entra quando a exportação a
-  // fornecer; o vencimento entra sempre, e é ele que separa uma parcela
-  // da outra quando não há coluna de parcela — sem isto, a mesma nota
-  // parcelada em duas vezes teria uma chave só, e a segunda parcela
-  // seria lida como repetição da primeira.
-  if (cnpj && doc && dados.vencimento) {
-    return `d:${cnpj}|${doc}|${(dados.parcela ?? "").trim()}|${dados.vencimento}`;
-  }
-  if (fornecedor && valor && dados.vencimento) return `f:${fornecedor}|${valor}|${dados.vencimento}`;
-  return null;
+  const forte = chaveDocumento(dados.fornecedor, dados.numeroDocumento, dados.vencimento, dados.valor);
+  if (!forte) return null;
+  // A posição da parcela entra só aqui, na chave gravada: ela distingue
+  // "08/12" de "09/12" do mesmo contrato. Não entra na chave comparável
+  // (`chaveDocumento`) porque o banco não guarda esse dado da origem.
+  const parcela = dados.parcelaNumero != null ? `${dados.parcelaNumero}/${dados.parcelaTotal}` : "";
+  return `${forte}|${parcela}`;
 }
 
 /* ============================ análise ============================ */
@@ -243,41 +295,56 @@ export const SEM_EXISTENTES: ExistentesConhecidos = {
 };
 
 /**
- * Chave forte por documento fiscal, calculável IGUAL dos dois lados —
- * a partir de uma linha da planilha e a partir de uma conta do banco.
+ * Chave forte de identidade, calculável IGUAL dos dois lados — a partir
+ * de uma linha da planilha e a partir de uma conta já gravada.
  *
- * Usa o vencimento, e não o número da parcela, como o que distingue uma
- * parcela da outra. Dois motivos, nesta ordem:
+ * **FORNECEDOR + DOCUMENTO + VENCIMENTO + VALOR.**
  *
- * 1. **É o único que existe dos dois lados.** A conta no banco guarda a
- *    data de vencimento; não guarda "esta é a parcela 2 da nota 4591 da
- *    exportação". Comparar por parcela exigiria um dado que só um dos
- *    lados tem — e comparação torta é pior que comparação simples.
- * 2. **Duas parcelas da mesma nota sempre vencem em datas diferentes** —
- *    é o que faz delas parcelas. Sem isto, a nota 4591 parcelada em duas
- *    vezes seria lida como a mesma conta repetida, e a segunda parcela
- *    nunca entraria.
+ * O CNPJ foi retirado desta chave, e isso é o conserto de um defeito
+ * grave. No arquivo real da AutEM o CNPJ é o da própria ASA (dois
+ * valores, matriz e filial, cobrindo dezenas de fornecedores) — ele não
+ * distingue nada. Pior: como o número do documento também se repete
+ * (a exportação usa um texto genérico quando não há nota), a chave
+ * antiga `CNPJ|documento|vencimento` colapsava despesas legítimas e
+ * diferentes numa só. Medido no arquivo real: **17 de 68 lançamentos
+ * seriam descartados em silêncio como "repetida"**, cada um com
+ * fornecedor e valor próprios.
  *
- * O número da parcela, quando a exportação trouxer, continua sendo
- * aproveitado: entra em `montarChave` (gravada em `origem_chave`) e no
- * registro da linha original.
+ * Com fornecedor e valor na chave, o mesmo arquivo produz uma chave por
+ * lançamento — nenhuma despesa desaparece. O documento continua na
+ * chave porque, quando existe de verdade, é o melhor discriminador.
+ *
+ * Todos os quatro campos existem dos dois lados: em `contas` são
+ * `fornecedores.nome`, `numero_documento`, `vencimento` e
+ * `valor_inicial`. Documento ausente vira string vazia em vez de anular
+ * a chave — fornecedor + vencimento + valor já identificam.
  */
 export function chaveDocumento(
-  cnpj: string | null,
+  fornecedor: string | null,
   documento: string | null,
-  vencimento: string | null
+  vencimento: string | null,
+  valor: number | null
 ): string | null {
-  const c = apenasDigitos(cnpj);
-  const d = documento?.trim().toUpperCase();
-  if (!c || !d || !vencimento) return null;
-  return `${c}|${d}|${vencimento}`;
+  const f = fornecedor?.trim().toLowerCase();
+  if (!f || !vencimento || valor == null) return null;
+  const d = (documento ?? "").trim().toUpperCase();
+  return `${f}|${d}|${vencimento}|${Math.abs(valor).toFixed(2)}`;
 }
 
-/** Chave fraca. Nunca decide sozinha — só levanta "verificar". */
+/**
+ * Chave FRACA — mesmo fornecedor, mesmo valor, mesmo vencimento, mas
+ * documento diferente (ou ausente).
+ *
+ * Nunca decide sozinha: só levanta "Possível duplicidade — verificar",
+ * com caixa de seleção para a pessoa escolher. É a diferença entre esta
+ * e a chave forte: lá o documento bate, aqui não. Pode ser o mesmo
+ * lançamento cadastrado com outro número de nota, ou podem ser duas
+ * despesas iguais legítimas — quem sabe é quem viu o boleto.
+ */
 export function chaveFraca(fornecedor: string | null, valor: number | null, vencimento: string | null): string | null {
   const f = fornecedor?.trim().toLowerCase();
   if (!f || valor == null || !vencimento) return null;
-  return `${f}|${valor.toFixed(2)}|${vencimento}`;
+  return `${f}|${Math.abs(valor).toFixed(2)}|${vencimento}`;
 }
 
 /**
@@ -290,7 +357,8 @@ export function chaveFraca(fornecedor: string | null, valor: number | null, venc
 export function analisar(
   abas: AbaLida[],
   nomeArquivo: string,
-  existentes: ExistentesConhecidos = SEM_EXISTENTES
+  existentes: ExistentesConhecidos = SEM_EXISTENTES,
+  catalogos: Catalogos = CATALOGOS_VAZIOS
 ): ResultadoAnalise | { ok: false; erro: string } {
   const cabecalho = acharCabecalho(abas);
 
@@ -366,11 +434,75 @@ export function analisar(
       categoria: lerTexto(pegar(linha, "categoria")),
       observacao: lerTexto(pegar(linha, "observacao")),
       recorrencia: lerTexto(pegar(linha, "recorrencia")),
-      valor: lerNumero(pegar(linha, "valor")),
-      valorPago: lerNumero(pegar(linha, "valorPago")),
+      valor: null,
+      valorOriginal: null,
+      valorPago: null,
+      valorPagoOriginal: null,
       parcela: lerTexto(pegar(linha, "parcela")),
+      parcelaNumero: null,
+      parcelaTotal: null,
+      formaPagamentoAsa: null,
+      classificacaoId: null,
+      classificacaoNome: null,
+      grupo: null,
+      bancoId: null,
+      bancoNome: null,
       extras: {},
     };
+
+    // Valores: guarda o original como veio e converte para o jeito do
+    // ASA (positivo). Ver `valorParaAsa` — a AutEM exporta despesa como
+    // número negativo.
+    dados.valorOriginal = lerNumero(pegar(linha, "valor"));
+    dados.valor = valorParaAsa(dados.valorOriginal);
+    dados.valorPagoOriginal = lerNumero(pegar(linha, "valorPago"));
+    dados.valorPago = valorParaAsa(dados.valorPagoOriginal);
+
+    // Posição da parcela. Uma coluna "Parcela" explícita tem prioridade;
+    // na falta dela, "Recorrência" da AutEM é quem traz ("08/12").
+    const posicao = lerParcela(dados.parcela) ?? lerParcela(dados.recorrencia);
+    if (posicao) {
+      dados.parcelaNumero = posicao.numero;
+      dados.parcelaTotal = posicao.total;
+    }
+
+    dados.formaPagamentoAsa = traduzirFormaPagamento(dados.formaPagamento);
+
+    // Categoria → Classificação. Quando encontra, o GRUPO vem junto e é
+    // o grupo verdadeiro daquela classificação — melhor do que deduzir
+    // pelo Centro de custo.
+    const classificacao = acharClassificacao(dados.categoria, catalogos.classificacoes);
+    if (classificacao) {
+      dados.classificacaoId = classificacao.id;
+      dados.classificacaoNome = classificacao.nome;
+      dados.grupo = classificacao.grupo;
+    } else {
+      // Sem classificação, o Centro de custo ainda pode dizer o grupo.
+      dados.grupo = acharGrupo(dados.centroCusto, catalogos.classificacoes);
+    }
+
+    // Conta bancária: pode virar banco, pode virar forma de pagamento
+    // (caso do PIX), pode não virar nada.
+    const conta = resolverContaBancaria(dados.contaBancaria, catalogos.bancos);
+    dados.bancoId = conta.bancoId;
+    dados.bancoNome = conta.bancoNome;
+
+    if (conta.formaPagamento) {
+      // Regra confirmada com o cliente: "PIX" na coluna de conta define
+      // a forma de pagamento e deixa o banco em branco — a conta de onde
+      // o PIX saiu só o comprovante revela.
+      //
+      // No arquivo real existe UMA linha em que a coluna própria de
+      // forma diz outra coisa (um boleto pago por PIX é perfeitamente
+      // possível). A regra do cliente prevalece, mas o desencontro não é
+      // escondido: vira aviso na prévia, logo abaixo.
+      if (dados.formaPagamentoAsa && dados.formaPagamentoAsa !== conta.formaPagamento) {
+        avisos.push(
+          `A planilha diz "${dados.formaPagamento}" na forma de pagamento e "${dados.contaBancaria}" na conta — foi usado ${conta.formaPagamento}. Confira se precisar.`
+        );
+      }
+      dados.formaPagamentoAsa = conta.formaPagamento;
+    }
 
     // Colunas sem correspondência ficam guardadas junto da conta (§10):
     // não viram classificação inventada, mas também não se perdem.
@@ -392,18 +524,29 @@ export function analisar(
     }
     if (!dados.descricao) problemas.push("Descrição: não informada e sem fornecedor para usar no lugar.");
 
-    // Campos que a origem trouxe e o ASA não tem para onde mandar
-    // automaticamente. Avisa, não inventa (§10).
-    for (const [campo, rotulo] of [
-      ["categoria", "Categoria"],
-      ["centroCusto", "Centro de custo"],
-      ["tipo", "Tipo"],
-    ] as const) {
-      const valor = dados[campo];
-      if (valor) avisos.push(`${rotulo} "${valor}": sem correspondência no ASA — classifique depois, se quiser.`);
+    // Aviso é para o que ficou EM BRANCO e alguém precisa completar —
+    // não para tudo que a origem trouxe. Cada aviso aponta um campo que
+    // o sistema se recusou a preencher por não ter certeza.
+    if (dados.categoria && !dados.classificacaoId) {
+      avisos.push(`Classificação: "${dados.categoria}" não corresponde a nenhuma do sistema — escolha ao conferir.`);
+    }
+    if (!dados.grupo) {
+      avisos.push(
+        dados.centroCusto
+          ? `Grupo: "${dados.centroCusto}" não corresponde a nenhum grupo contábil — escolha ao conferir.`
+          : "Grupo: a planilha não informou centro de custo — escolha ao conferir."
+      );
+    }
+    if (dados.formaPagamento && !dados.formaPagamentoAsa) {
+      avisos.push(
+        `Forma de pagamento "${dados.formaPagamento}" não existe no sistema — o campo fica em branco para você escolher.`
+      );
+    }
+    if (dados.contaBancaria && !dados.bancoId && !dados.formaPagamentoAsa) {
+      avisos.push(`Banco: "${dados.contaBancaria}" não corresponde a nenhuma conta cadastrada — escolha ao conferir.`);
     }
 
-    const chaveDoc = chaveDocumento(dados.cnpj, dados.numeroDocumento, dados.vencimento);
+    const chaveDoc = chaveDocumento(dados.fornecedor, dados.numeroDocumento, dados.vencimento, dados.valor);
     const chaveF = chaveFraca(dados.fornecedor, dados.valor, dados.vencimento);
     const chaveCompleta = montarChave(dados);
 
@@ -421,7 +564,7 @@ export function analisar(
       motivo = "Já importada antes (mesma linha desta planilha)";
     } else if (chaveDoc && existentes.documentos.has(chaveDoc)) {
       situacao = "existente";
-      motivo = "Já cadastrada (mesmo CNPJ, documento e vencimento)";
+      motivo = "Já cadastrada (mesmo fornecedor, documento, vencimento e valor)";
     } else if (dados.idExterno && vistasNoArquivo.has(`r:${dados.idExterno}`)) {
       situacao = "existente";
       motivo = "Repetida dentro do próprio arquivo";
@@ -468,6 +611,7 @@ export function analisar(
       existentes: conta("existente"),
       duplicadosPossiveis: conta("duplicado_possivel"),
       comProblema: conta("erro"),
+      comComplemento: linhasAnalisadas.filter((l) => l.situacao !== "erro" && l.avisos.length > 0).length,
     },
   };
 }

@@ -31,10 +31,31 @@ export interface DadosOrigem {
   centroCusto: string | null;
   categoria: string | null;
   observacao: string | null;
+  /** Texto cru da coluna "Recorrência". Apesar do nome, traz a POSIÇÃO da parcela ("08/12"). */
   recorrencia: string | null;
+  /** Valor da obrigação, já no jeito do ASA: sempre positivo. */
   valor: number | null;
+  /** Valor exatamente como veio da origem — negativo, no caso da AutEM. Nunca descartado. */
+  valorOriginal: number | null;
+  /** Valor já pago, positivo. `null` ou 0 = ainda não liquidado. */
   valorPago: number | null;
+  /** Valor pago como veio da origem. */
+  valorPagoOriginal: number | null;
+  /** Texto cru de uma coluna "Parcela", quando a exportação tiver uma. */
   parcela: string | null;
+  /** Posição da parcela — de "Recorrência" (`08/12`) ou de uma coluna "Parcela". */
+  parcelaNumero: number | null;
+  parcelaTotal: number | null;
+  /** Forma de pagamento traduzida para o vocabulário do ASA. `null` = sem correspondência. */
+  formaPagamentoAsa: string | null;
+  /** Classificação do ASA correspondente à Categoria da origem. `null` = completar à mão. */
+  classificacaoId: string | null;
+  classificacaoNome: string | null;
+  /** Grupo contábil — da classificação encontrada ou do Centro de custo. `null` = completar à mão. */
+  grupo: string | null;
+  /** Banco do ASA correspondente à Conta bancária da origem. `null` = completar à mão. */
+  bancoId: string | null;
+  bancoNome: string | null;
   /** Colunas que a planilha trouxe e o ASA não sabe aproveitar (§10) — guardadas, nunca descartadas. */
   extras: Record<string, string>;
 }
@@ -67,6 +88,8 @@ export interface ResumoAnalise {
   existentes: number;
   duplicadosPossiveis: number;
   comProblema: number;
+  /** Linhas que entram, mas trazem algo que a origem não resolve e alguém precisa completar depois. */
+  comComplemento: number;
 }
 
 export interface ResultadoAnalise {

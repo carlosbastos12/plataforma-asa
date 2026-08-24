@@ -2,21 +2,24 @@
  * Gera a planilha de HOMOLOGAÇÃO do importador.
  *
  * ┌──────────────────────────────────────────────────────────────────┐
- * │ O CONTEÚDO DESTA PLANILHA É FICTÍCIO E O LAYOUT NÃO É O DA AUTEM.│
+ * │ LAYOUT REAL, DADOS FICTÍCIOS.                                    │
  * │                                                                  │
- * │ Nenhum arquivo real de exportação de despesas da AutEM foi       │
- * │ recebido até aqui. As colunas abaixo reproduzem apenas a LISTA   │
- * │ DE CAMPOS informada pelo Vitor, numa grafia plausível, para que  │
- * │ o importador pudesse ser construído e testado desde já.          │
+ * │ As 18 colunas abaixo, seus nomes e a forma como os valores são   │
+ * │ escritos reproduzem a exportação real de despesas da AutEM,      │
+ * │ conferida contra um arquivo verdadeiro:                          │
+ * │   - despesa como valor NEGATIVO;                                 │
+ * │   - datas como texto dd/mm/aaaa;                                 │
+ * │   - campo sem valor escrito como "------", não em branco;        │
+ * │   - "Recorrência" no formato N/M (posição da parcela);           │
+ * │   - CNPJ é o do PAGADOR (a ASA), repetido em todos os credores.  │
  * │                                                                  │
- * │ Fornecedores, CNPJs, notas e valores são inventados — nenhum     │
- * │ dado real da ASA entra aqui, conforme a política do projeto.     │
+ * │ Já os DADOS são inventados: nenhum fornecedor, CNPJ, número de   │
+ * │ nota, valor ou observação real da ASA aparece aqui, conforme a   │
+ * │ política de dados fictícios do projeto.                          │
  * └──────────────────────────────────────────────────────────────────┘
  *
  * Reaproveita o gerador de XLSX que o projeto já usa nas exportações
- * (`frontend/src/lib/exportar/xlsx.ts`) em vez de ter um segundo — assim
- * a planilha de teste é montada exatamente pelo mesmo código que produz
- * os arquivos reais do sistema.
+ * (`frontend/src/lib/exportar/xlsx.ts`) em vez de ter um segundo.
  *
  * Uso: node scripts/gerar-planilha-homologacao.mjs
  * Saída: docs/homologacao/homologacao-importacao-FICTICIA.xlsx
@@ -30,114 +33,118 @@ import { gerarXlsx } from "../frontend/src/lib/exportar/xlsx.ts";
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = join(AQUI, "..");
 
-const d = (iso) => ({ tipo: "data", valor: iso });
+/** Marcador de vazio usado pela origem — não é célula em branco. */
+const VAZIO = "------";
 
+/** CNPJ fictício do pagador. Na origem real é o da própria empresa, repetido. */
+const CNPJ_PAGADOR = "11.222.333/0001-81";
+const CNPJ_PAGADOR_FILIAL = "11.222.333/0002-62";
+
+/** Os 18 cabeçalhos, exatamente como a origem escreve. */
 export const COLUNAS = [
   "Vencimento",
   "Liquidação",
-  "Data de Lançamento",
+  "Lançamento",
   "Competência",
   "Tipo",
   "CNPJ",
-  "Número do Documento",
-  "Forma de Pagamento",
-  "Fornecedor",
-  "Conta Bancária",
+  "Nº Documento",
+  "Forma de Pgto.",
+  "Cliente / Fornecedor",
+  "Conta Bancaria",
   "Descrição",
   "Centro de Custo",
   "Categoria",
   "Observação",
   "Recorrência",
-  "Valor",
-  "Valor Pago",
+  "Valor Pago (R$)",
+  "Valor (R$)",
+  "Diferença (R$)",
 ];
 
 /**
- * Cada linha exercita um caminho diferente do importador. A coluna
- * "Observação" diz qual — é planilha de teste, e isso ajuda a conferir.
+ * Cada linha exercita um caminho do importador. A coluna "Observação"
+ * diz qual — é planilha de teste, e isso ajuda a conferir na tela.
  */
 export const LINHAS = [
-  // 1. Caminho completo, já liquidada.
-  [d("2026-09-10"), d("2026-09-09"), d("2026-08-28"), d("2026-09-01"), "Despesa", "11.222.333/0001-81",
-   "4587", "Boleto", "Distribuidora Norte Pecas LTDA", "Banco do Brasil", "Pecas de reposicao - lote 12",
-   "Manutencao", "Manutencao Geral", "linha completa e ja paga", "Nao", 1500, 1500],
+  // 1. Liquidada: valor pago igual ao valor, ambos negativos.
+  ["05/08/2026", "11/08/2026", "06/07/2026", "05/08/2026", "Despesa", CNPJ_PAGADOR,
+   "VM00111222", "BOLETO BANCARIO", "Distribuidora Norte Pecas", "CEF EMPRESA FICTICIA LTDA",
+   "PECAS DE REPOSICAO", "MANUTENCAO FROTA", "MANUTENCAO GERAL",
+   "linha liquidada\r\nvalor pago igual ao valor", "01/01", -1500, -1500, 0],
 
-  // 2. Valor com milhar e centavos, em TEXTO — o caso que quebrava antes.
-  [d("2026-09-15"), "", d("2026-09-01"), d("2026-09-01"), "Despesa", "22.333.444/0001-92",
-   "4588", "PIX", "Auto Eletrica Bandeirante", "", "Revisao eletrica da frota",
-   "Manutencao", "Manutencao Geral", "valor 1.500,50 como texto", "Nao", "1.500,50", ""],
+  // 2. Em aberto: liquidação com marcador de vazio, valor pago zero.
+  ["07/08/2026", VAZIO, "01/07/2026", "07/08/2026", "Despesa", CNPJ_PAGADOR,
+   "NIC0333444", "BOLETO BANCARIO", "Auto Eletrica Bandeirante", "CEF EMPRESA FICTICIA LTDA",
+   "REVISAO ELETRICA", "MANUTENCAO FROTA", "MANUTENCAO GERAL",
+   "em aberto - liquidacao vazia", "01/01", 0, -890.75, -89075],
 
-  // 3. Milhar sem centavos, em TEXTO: 1.500 é mil e quinhentos, não 1,50.
-  [d("2026-09-20"), "", d("2026-09-02"), d("2026-09-01"), "Despesa", "33.444.555/0001-03",
-   "4589", "Boleto", "Pneus Cearense ME", "", "Recapagem de 4 pneus",
-   "Manutencao", "Pneus", "valor 1.500 como texto (milhar)", "Nao", "1.500", ""],
+  // 3 e 4. Parcelado: mesma nota, parcelas e vencimentos diferentes.
+  ["10/08/2026", VAZIO, "02/07/2026", "10/08/2026", "Despesa", CNPJ_PAGADOR,
+   "AS01555666", "BOLETO BANCARIO", "Oficina Mecanica Vale Verde", "CEF EMPRESA FICTICIA LTDA",
+   "RETIFICA DE MOTOR", "MANUTENCAO FROTA", "MANUTENCAO GERAL",
+   "parcela 8 de 12 - nao pode virar 1/1", "08/12", 0, -2400, -240000],
+  ["10/09/2026", VAZIO, "02/07/2026", "10/09/2026", "Despesa", CNPJ_PAGADOR,
+   "AS01555666", "BOLETO BANCARIO", "Oficina Mecanica Vale Verde", "CEF EMPRESA FICTICIA LTDA",
+   "RETIFICA DE MOTOR", "MANUTENCAO FROTA", "MANUTENCAO GERAL",
+   "parcela 9 de 12 - mesma nota, outro vencimento", "09/12", 0, -2400, -240000],
 
-  // 4. Sem CNPJ e sem documento: só a chave fraca fica disponível.
-  [d("2026-09-25"), "", d("2026-09-03"), d("2026-09-01"), "Despesa", "",
-   "", "Transferencia", "Servicos Gerais Aurora", "", "Limpeza do patio - setembro",
-   "Administrativo", "Servicos Terceirizados", "sem CNPJ e sem documento", "Mensal", 890.75, ""],
+  // 5. Valor alto com centavos, liquidada por PIX.
+  ["03/08/2026", "03/08/2026", "28/07/2026", "01/08/2026", "Despesa", CNPJ_PAGADOR_FILIAL,
+   "7788990", "PIX", "Energia Litoral S.A.", "PIX",
+   "ENERGIA ELETRICA", "DESPESA ADMINISTRATIVA", "ENERGIA ELETRICA",
+   "valor com centavos, pago por PIX", "08/12", -4320.9, -4320.9, 0],
 
-  // 5. Datas em formato brasileiro, escritas como texto.
-  ["05/10/2026", "", "01/10/2026", "10/2026", "Despesa", "44.555.666/0001-14",
-   "4590", "Boleto", "Papelaria Central EIRELI", "", "Material de escritorio",
-   "Administrativo", "Material de Consumo", "datas em dd/mm/aaaa como texto", "Nao", 312.4, ""],
+  // 6. Forma de pagamento que o ASA nao conhece.
+  ["12/08/2026", VAZIO, "05/07/2026", "12/08/2026", "Despesa", CNPJ_PAGADOR,
+   "CARNE00123", "CARNE", "Imobiliaria Ficticia ME", "CEF EMPRESA FICTICIA LTDA",
+   "ALUGUEL GALPAO", "DESPESA ADMINISTRATIVA", "ALUGUEL",
+   "forma de pagamento sem correspondencia", "25/38", 0, -6800, -680000],
 
-  // 6 e 7. Parcelada: MESMO documento, parcelas diferentes — não é duplicidade.
-  [d("2026-10-10"), "", d("2026-09-05"), d("2026-09-01"), "Despesa", "55.666.777/0001-25",
-   "4591", "Boleto", "Oficina Mecanica Vale Verde", "", "Retifica de motor - parcela 1",
-   "Manutencao", "Manutencao Geral", "parcela 1 de 2 do mesmo documento", "Nao", 2400, ""],
-  [d("2026-11-10"), "", d("2026-09-05"), d("2026-09-01"), "Despesa", "55.666.777/0001-25",
-   "4591", "Boleto", "Oficina Mecanica Vale Verde", "", "Retifica de motor - parcela 2",
-   "Manutencao", "Manutencao Geral", "parcela 2 de 2 do mesmo documento", "Nao", 2400, ""],
+  // 7 e 8. Mesmo fornecedor, valor e vencimento, DOCUMENTOS diferentes:
+  //        ambiguidade legitima -> "possivel duplicidade, verificar".
+  ["05/08/2026", "11/08/2026", "06/07/2026", "05/08/2026", "Despesa", CNPJ_PAGADOR,
+   "MT00777001", "BOLETO BANCARIO", "Orgao de Transito Ficticio", "CEF EMPRESA FICTICIA LTDA",
+   "MULTA DE TRANSITO", "IMPOSTOS", "MULTA DE TRANSITO",
+   "par ambiguo - documento diferente (1 de 2)", "01/01", -104.13, -104.13, 0],
+  ["05/08/2026", "11/08/2026", "06/07/2026", "05/08/2026", "Despesa", CNPJ_PAGADOR,
+   "MT00777002", "BOLETO BANCARIO", "Orgao de Transito Ficticio", "CEF EMPRESA FICTICIA LTDA",
+   "MULTA DE TRANSITO", "IMPOSTOS", "MULTA DE TRANSITO",
+   "par ambiguo - documento diferente (2 de 2)", "01/01", -104.13, -104.13, 0],
 
-  // 8. PROBLEMA: sem valor.
-  [d("2026-09-30"), "", d("2026-09-06"), d("2026-09-01"), "Despesa", "66.777.888/0001-36",
-   "4592", "Boleto", "Transportes Rapido Sul", "", "Frete de pecas",
-   "Logistica", "Fretes", "PROBLEMA: valor em branco", "Nao", "", ""],
+  // 9. Observacao longa com varias quebras de linha.
+  ["14/08/2026", VAZIO, "10/07/2026", "14/08/2026", "Despesa", CNPJ_PAGADOR,
+   "NF00998877", "DEBITO AUTOMATICO", "Servicos Gerais Aurora", "CEF EMPRESA FICTICIA LTDA",
+   "LIMPEZA DO PATIO", "DESPESA ADMINISTRATIVA", "SERVICOS TERCEIRIZADOS",
+   "observacao longa\r\nsegunda linha do texto\r\nterceira linha com mais detalhe\r\nquarta linha final",
+   "06/12", 0, -1180.4, -118040],
 
-  // 9. PROBLEMA: data que não existe.
-  ["30/02/2026", "", d("2026-09-07"), d("2026-09-01"), "Despesa", "77.888.999/0001-47",
-   "4593", "PIX", "Lubrificantes do Nordeste", "", "Oleo lubrificante - 200L",
-   "Manutencao", "Lubrificantes", "PROBLEMA: 30/02 nao existe", "Nao", 1180, ""],
+  // 10. Documento generico repetido (a origem faz isso quando nao ha nota):
+  //     fornecedor e valor diferentes -> as duas TEM que entrar.
+  ["09/08/2026", VAZIO, "01/07/2026", "09/08/2026", "Despesa", CNPJ_PAGADOR,
+   "AVULSO", "BOLETO BANCARIO", "Papelaria Central Ficticia", "CEF EMPRESA FICTICIA LTDA",
+   "MATERIAL DE ESCRITORIO", "DESPESA ADMINISTRATIVA", "MATERIAL DE CONSUMO",
+   "documento generico - fornecedor A", "01/01", 0, -312.4, -31240],
+  ["09/08/2026", VAZIO, "01/07/2026", "09/08/2026", "Despesa", CNPJ_PAGADOR,
+   "AVULSO", "BOLETO BANCARIO", "Pneus Cearense Ficticio", "CEF EMPRESA FICTICIA LTDA",
+   "RECAPAGEM DE PNEUS", "MANUTENCAO FROTA", "PNEUS",
+   "documento generico - fornecedor B (nao pode sumir)", "01/01", 0, -1875.5, -187550],
 
-  // 10. PROBLEMA: valor zerado.
-  [d("2026-10-05"), "", d("2026-09-08"), d("2026-09-01"), "Despesa", "88.999.000/0001-58",
-   "4594", "Boleto", "Seguros Atlantico S.A.", "", "Ajuste de apolice",
-   "Administrativo", "Seguros", "PROBLEMA: valor zero", "Nao", 0, ""],
+  // 11. PROBLEMA: sem valor.
+  ["15/08/2026", VAZIO, "11/07/2026", "15/08/2026", "Despesa", CNPJ_PAGADOR,
+   "NF00445566", "BOLETO BANCARIO", "Transportes Rapido Ficticio", "CEF EMPRESA FICTICIA LTDA",
+   "FRETE DE PECAS", "MANUTENCAO FROTA", "FRETES",
+   "PROBLEMA: valor em branco", "01/01", 0, "", ""],
 
-  // 11. Repetida de propósito: idêntica à linha 1, mesmo documento.
-  [d("2026-09-10"), d("2026-09-09"), d("2026-08-28"), d("2026-09-01"), "Despesa", "11.222.333/0001-81",
-   "4587", "Boleto", "Distribuidora Norte Pecas LTDA", "Banco do Brasil", "Pecas de reposicao - lote 12",
-   "Manutencao", "Manutencao Geral", "repetida dentro do proprio arquivo", "Nao", 1500, 1500],
-
-  // 12. Sem descrição, mas com fornecedor: o nome do fornecedor é usado.
-  [d("2026-10-15"), "", d("2026-09-09"), d("2026-09-01"), "Despesa", "99.000.111/0001-69",
-   "4595", "Debito automatico", "Energia Litoral S.A.", "", "",
-   "Administrativo", "Energia Eletrica", "sem descricao - usa o fornecedor", "Mensal", 4320.9, ""],
+  // 12. PROBLEMA: vencimento que nao existe no calendario.
+  ["30/02/2026", VAZIO, "12/07/2026", "01/08/2026", "Despesa", CNPJ_PAGADOR,
+   "NF00112233", "PIX", "Lubrificantes Ficticios", "CEF EMPRESA FICTICIA LTDA",
+   "OLEO LUBRIFICANTE", "MANUTENCAO FROTA", "LUBRIFICANTES",
+   "PROBLEMA: 30/02 nao existe", "01/01", 0, -1180, -118000],
 ];
 
-const LEIA_ME = [
-  ["PLANILHA FICTICIA - SOMENTE PARA HOMOLOGACAO"],
-  [""],
-  ["Este arquivo NAO e, e nao representa, a exportacao real de despesas da AutEM."],
-  ["Nenhum arquivo real de exportacao da AutEM foi recebido ate a data de geracao deste arquivo."],
-  [""],
-  ["As colunas reproduzem apenas a LISTA DE CAMPOS informada pelo Vitor, numa grafia plausivel,"],
-  ["para permitir construir e testar o importador antes de termos o arquivo verdadeiro."],
-  [""],
-  ["Fornecedores, CNPJs, numeros de nota e valores sao inventados. Nenhum dado real da ASA"],
-  ["aparece aqui, conforme a politica de dados ficticios do projeto."],
-  [""],
-  ["Quando o arquivo real chegar: comparar os cabecalhos com frontend/src/lib/importacao/mapeamento.ts,"],
-  ["ajustar os apelidos aceitos, testar e validar com o Vitor."],
-];
-
-/** As mesmas abas usadas pelos testes — exportado para não duplicar a montagem. */
 export function planilhasHomologacao() {
-  return [
-    { nome: "LEIA-ME (ficticia)", colunas: ["AVISO"], linhas: LEIA_ME },
-    { nome: "Despesas", colunas: COLUNAS, linhas: LINHAS },
-  ];
+  return [{ nome: "Sheet1", colunas: COLUNAS, linhas: LINHAS }];
 }
 
 export async function gerarBytes() {
@@ -152,6 +159,6 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "
   mkdirSync(destino, { recursive: true });
   const caminho = join(destino, "homologacao-importacao-FICTICIA.xlsx");
   writeFileSync(caminho, bytes);
-  console.log(`Planilha de homologacao (FICTICIA) gerada: ${caminho}`);
+  console.log(`Planilha de homologacao (LAYOUT REAL, DADOS FICTICIOS) gerada: ${caminho}`);
   console.log(`${LINHAS.length} linhas, ${COLUNAS.length} colunas.`);
 }

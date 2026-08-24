@@ -7,12 +7,12 @@ import { SUPABASE_CONFIGURADO } from "@/lib/supabase/config";
 import { lerXlsx } from "./xlsx-leitor";
 import {
   analisar,
-  apenasDigitos,
   chaveDocumento,
   chaveFraca,
   montarChave,
   type ExistentesConhecidos,
 } from "./analise";
+import type { Catalogos } from "./mapeamento";
 import type { FalhaAnalise, LinhaAnalisada, ResultadoAnalise, ResultadoImportacao } from "./tipos";
 
 /** Mesmo teto do envio de documentos — o `bodySizeLimit` já cobre em `next.config.ts`. */
@@ -90,9 +90,6 @@ async function levantarExistentes(
   const chavesDoArquivo = [
     ...new Set(linhas.map((l) => montarChave(l.dados)).filter((v): v is string => !!v)),
   ];
-  const docsDoArquivo = [
-    ...new Set(linhas.map((l) => l.dados.numeroDocumento).filter((v): v is string => !!v)),
-  ];
   const vencimentosDoArquivo = [
     ...new Set(linhas.map((l) => l.dados.vencimento).filter((v): v is string => !!v)),
   ];
@@ -126,46 +123,32 @@ async function levantarExistentes(
     );
   }
 
-  // Para contas que NÃO vieram de importação (cadastradas à mão), a
-  // identidade possível é CNPJ + documento + vencimento — as três coisas
-  // que existem dos dois lados. Ver `chaveDocumento`.
-  if (docsDoArquivo.length > 0) {
-    consultas.push(
-      supabase
-        .from("contas")
-        .select("numero_documento, vencimento, fornecedores(cnpj)")
-        .in("numero_documento", docsDoArquivo)
-        .then(({ data }) => {
-          for (const linha of data ?? []) {
-            const bruto = linha.fornecedores as { cnpj: string | null } | { cnpj: string | null }[] | null;
-            const fornecedor = Array.isArray(bruto) ? bruto[0] : bruto;
-            const chave = chaveDocumento(
-              fornecedor?.cnpj ?? null,
-              String(linha.numero_documento),
-              String(linha.vencimento)
-            );
-            if (chave) documentos.add(chave);
-          }
-        })
-    );
-  }
-
+  // UMA consulta serve às duas chaves restantes. Delimitada pelos
+  // vencimentos do arquivo: traz só as contas que teriam chance de casar
+  // com alguma linha, nunca a tabela inteira.
+  //
+  // O `select` pede exatamente os quatro campos da chave forte
+  // (fornecedor, documento, vencimento, valor) — os mesmos que
+  // `chaveDocumento` usa do lado da planilha, para os dois lados
+  // produzirem a mesma string.
   if (vencimentosDoArquivo.length > 0) {
     consultas.push(
       supabase
         .from("contas")
-        .select("valor_inicial, vencimento, fornecedores(nome)")
+        .select("numero_documento, vencimento, valor_inicial, fornecedores(nome)")
         .in("vencimento", vencimentosDoArquivo)
         .then(({ data }) => {
           for (const linha of data ?? []) {
             const bruto = linha.fornecedores as { nome: string } | { nome: string }[] | null;
-            const fornecedor = Array.isArray(bruto) ? bruto[0] : bruto;
-            const chave = chaveFraca(
-              fornecedor?.nome ?? null,
-              Number(linha.valor_inicial ?? 0),
-              String(linha.vencimento)
-            );
-            if (chave) fracas.add(chave);
+            const nome = (Array.isArray(bruto) ? bruto[0] : bruto)?.nome ?? null;
+            const valor = Number(linha.valor_inicial ?? 0);
+            const vencimento = String(linha.vencimento);
+
+            const forte = chaveDocumento(nome, linha.numero_documento as string | null, vencimento, valor);
+            if (forte) documentos.add(forte);
+
+            const fraca = chaveFraca(nome, valor, vencimento);
+            if (fraca) fracas.add(fraca);
           }
         })
     );
@@ -173,6 +156,28 @@ async function levantarExistentes(
 
   await Promise.all(consultas);
   return { refs, chaves, documentos, fracas };
+}
+
+/**
+ * Catálogos do ASA usados para resolver Grupo, Classificação e Banco.
+ *
+ * Lidos do banco, não de uma lista fixa no código: se a contabilidade
+ * acrescentar uma classificação ou a empresa cadastrar uma conta nova, a
+ * importação passa a reconhecê-la sem precisar de deploy. Duas consultas
+ * pequenas, uma vez por importação — nunca por linha.
+ */
+async function carregarCatalogos(
+  supabase: Awaited<ReturnType<typeof criarClienteServidor>>
+): Promise<Catalogos> {
+  const [classRes, bancosRes] = await Promise.all([
+    supabase.from("classificacoes").select("id, grupo, nome").eq("ativo", true),
+    supabase.from("bancos").select("id, nome").eq("ativo", true),
+  ]);
+
+  return {
+    classificacoes: (classRes.data ?? []) as Catalogos["classificacoes"],
+    bancos: (bancosRes.data ?? []) as Catalogos["bancos"],
+  };
 }
 
 /**
@@ -222,9 +227,11 @@ export async function analisarPlanilha(formData: FormData): Promise<ResultadoAna
     return { ok: false, erro: "A planilha não tem nenhuma linha de despesa abaixo do cabeçalho." };
   }
 
-  const existentes = await levantarExistentes(supabase, previa.linhas);
-  const resultado = analisar(abas, arquivo.nome, existentes);
-  return resultado;
+  const [existentes, catalogos] = await Promise.all([
+    levantarExistentes(supabase, previa.linhas),
+    carregarCatalogos(supabase),
+  ]);
+  return analisar(abas, arquivo.nome, existentes, catalogos);
 }
 
 /**
@@ -272,8 +279,11 @@ export async function importarPlanilha(formData: FormData): Promise<ResultadoImp
   if (!previa.ok) return { ...vazio, erro: previa.erro };
   if (previa.linhas.length > MAXIMO_LINHAS) return { ...vazio, erro: "Planilha acima do limite por importação." };
 
-  const existentes = await levantarExistentes(supabase, previa.linhas);
-  const analise = analisar(abas, arquivo.nome, existentes);
+  const [existentes, catalogos] = await Promise.all([
+    levantarExistentes(supabase, previa.linhas),
+    carregarCatalogos(supabase),
+  ]);
+  const analise = analisar(abas, arquivo.nome, existentes, catalogos);
   if (!analise.ok) return { ...vazio, erro: analise.erro };
 
   // Escolha da pessoa. Ausente = importar tudo que estiver como "novo".
@@ -336,12 +346,15 @@ export async function importarPlanilha(formData: FormData): Promise<ResultadoImp
 
     const faltando = nomesFornecedor.filter((n) => !idPorFornecedor.has(n.toLowerCase()));
     if (faltando.length > 0) {
-      const novos = faltando.map((nome) => {
-        const cnpj = aImportar.find(
-          (l) => l.dados.fornecedor?.trim().toLowerCase() === nome.toLowerCase() && l.dados.cnpj
-        )?.dados.cnpj;
-        return { nome, cnpj: apenasDigitos(cnpj ?? null) };
-      });
+      // Fornecedor entra SEM CNPJ, de propósito.
+      //
+      // A coluna CNPJ da exportação é o CNPJ da própria ASA (o pagador),
+      // não o do credor — no arquivo real são dois valores, matriz e
+      // filial, repetidos em dezenas de fornecedores distintos. Gravá-lo
+      // aqui carimbaria o CNPJ da ASA em todo fornecedor criado e
+      // corromperia o cadastro. O valor original não se perde: vai
+      // inteiro para `origem_dados`, campo `cnpj_na_origem`.
+      const novos = faltando.map((nome) => ({ nome, cnpj: null }));
 
       const { data: criados, error: erroForn } = await supabase
         .from("fornecedores")
@@ -355,9 +368,8 @@ export async function importarPlanilha(formData: FormData): Promise<ResultadoImp
 
   /* ---- Bancos: casamento por nome exato. Sem correspondência = fica em branco (§10) ---- */
 
-  const idPorBanco = new Map<string, string>();
-  const { data: bancos } = await supabase.from("bancos").select("id, nome");
-  for (const b of bancos ?? []) idPorBanco.set(String(b.nome).trim().toLowerCase(), String(b.id));
+  // (O banco de cada pagamento já foi resolvido na análise, contra o
+  // catálogo lido do próprio banco de dados — não há consulta aqui.)
 
   /* ---- Gravação em lote: contas, depois parcelas, depois pagamentos ---- */
 
@@ -374,39 +386,59 @@ export async function importarPlanilha(formData: FormData): Promise<ResultadoImp
     const d = linha.dados;
     return {
       id: contaId,
-      // Importação cria SOMENTE conta da empresa. A exportação é do
-      // sistema da empresa; conta particular é registro pessoal, digitado
-      // por quem é dono dele. Mantém o isolamento sem regra nova.
+      // Importação cria SOMENTE conta da empresa — e não precisa decidir
+      // nada para isso: a planilha que chega ao ASA já vem sem as contas
+      // particulares, retiradas antes de exportar. Por isso não existe
+      // aqui nenhuma detecção de Empresa × Particular.
       natureza: "empresa" as const,
       fornecedor_id: d.fornecedor ? (idPorFornecedor.get(d.fornecedor.trim().toLowerCase()) ?? null) : null,
       numero_documento: d.numeroDocumento,
       descricao: d.descricao,
+      // Já positivo — ver `valorParaAsa`. O número como veio (negativo,
+      // no caso da AutEM) fica em `origem_dados`.
       valor_inicial: d.valor,
       data_documento: d.dataLancamento,
       competencia: d.competencia,
       vencimento: d.vencimento,
-      forma_pagamento: d.formaPagamento,
+      // Só o vocabulário do ASA entra aqui. Sem correspondência, fica em
+      // branco para a pessoa escolher — o texto da origem é preservado.
+      forma_pagamento: d.formaPagamentoAsa,
+      // Observação vai inteira, com quebras de linha e tudo. Sem corte.
       observacoes: d.observacao,
-      total_parcelas: 1,
+      // Total de parcelas do contrato, quando a origem informa ("08/12"
+      // → 12). A conta guarda a parcela que veio nesta exportação, e o
+      // valor é o DAQUELA parcela — a exportação não informa o total do
+      // contrato, e o sistema não o calcula nem o adivinha.
+      total_parcelas: d.parcelaTotal ?? 1,
+      // Classificação vinda da Categoria da origem, só quando houve
+      // correspondência segura. `null` = fica para completar à mão, e a
+      // prévia diz isso. Uma reimportação nunca regrava este campo.
+      classificacao_id: d.classificacaoId,
       criado_por: user.id,
       origem: "planilha" as const,
       origem_ref: d.idExterno,
       origem_chave: montarChave(d),
       // A linha como veio, inclusive o que o ASA ainda não sabe usar.
-      // Nenhuma classificação é inventada a partir daqui (§10).
+      // Nenhuma classificação é inventada a partir daqui.
       origem_dados: {
         arquivo: analise.arquivo,
         aba: analise.aba,
         linha: linha.numeroLinha,
         importado_em: new Date().toISOString(),
         tipo: d.tipo,
+        // CNPJ do pagador na origem — NÃO é do fornecedor. Guardado aqui
+        // justamente para não ser confundido com o CNPJ do credor.
+        cnpj_na_origem: d.cnpj,
         categoria: d.categoria,
         centro_custo: d.centroCusto,
         conta_bancaria: d.contaBancaria,
+        forma_pagamento_na_origem: d.formaPagamento,
         recorrencia: d.recorrencia,
-        parcela: d.parcela,
+        parcela: d.parcelaNumero != null ? `${d.parcelaNumero}/${d.parcelaTotal}` : d.parcela,
         liquidacao: d.liquidacao,
-        valor_pago: d.valorPago,
+        // Valores exatamente como vieram, com o sinal da origem.
+        valor_na_origem: d.valorOriginal,
+        valor_pago_na_origem: d.valorPagoOriginal,
         colunas_sem_correspondencia: d.extras,
       },
       // Nada de classificacao_id, estabelecimento_id, historico ou
@@ -422,11 +454,14 @@ export async function importarPlanilha(formData: FormData): Promise<ResultadoImp
 
   const idsGravados = preparadas.map((p) => p.contaId);
 
+  // A posição real da parcela é preservada: "08/12" vira parcela 8 de
+  // 12, e não 1 de 1. É o que a lista de Contas a Pagar mostra na coluna
+  // Parcela — o mesmo que a pessoa vê no sistema de origem.
   const parcelas = preparadas.map(({ linha, contaId, parcelaId }) => ({
     id: parcelaId,
     conta_id: contaId,
-    numero: 1,
-    total: 1,
+    numero: linha.dados.parcelaNumero ?? 1,
+    total: linha.dados.parcelaTotal ?? 1,
     valor: linha.dados.valor,
     vencimento: linha.dados.vencimento,
   }));
@@ -441,17 +476,26 @@ export async function importarPlanilha(formData: FormData): Promise<ResultadoImp
 
   // Pagamento só quando a origem informou as DUAS coisas: a data em que
   // foi liquidado e quanto foi pago. Sem isso a conta entra em aberto,
-  // que é a verdade do que sabemos.
+  // que é a verdade do que sabemos. No arquivo real as duas condições
+  // andam juntas — quem não tem liquidação tem valor pago zerado.
+  //
+  // Usa a estrutura que já existe (Conta → Parcela → Pagamento); nada de
+  // registro financeiro paralelo.
   const pagamentos = preparadas
     .filter(({ linha }) => linha.dados.liquidacao && (linha.dados.valorPago ?? 0) > 0)
     .map(({ linha, parcelaId }) => ({
       parcela_id: parcelaId,
       data_pagamento: linha.dados.liquidacao,
+      // Positivo, como todo valor no ASA.
       valor_inicial: linha.dados.valorPago,
-      banco_id: linha.dados.contaBancaria
-        ? (idPorBanco.get(linha.dados.contaBancaria.trim().toLowerCase()) ?? null)
-        : null,
-      forma_pagamento: linha.dados.formaPagamento,
+      // Já resolvido na análise, contra o cadastro real de bancos. Sem
+      // correspondência segura fica em branco para ser completado —
+      // nunca é chutado. Em pagamento por PIX fica em branco de
+      // propósito: a coluna diz o meio, não a conta de origem, que só o
+      // comprovante revela. O texto original está em
+      // `origem_dados.conta_bancaria`.
+      banco_id: linha.dados.bancoId,
+      forma_pagamento: linha.dados.formaPagamentoAsa,
       criado_por: user.id,
     }));
 

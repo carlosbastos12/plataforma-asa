@@ -4,6 +4,17 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Corrigido / Adicionado — Importador AutEM ajustado ao layout real (2026-08-21)
+A planilha real da AutEM era recusada logo na primeira tela. Corrigido e concluído com as decisões de negócio confirmadas pelo Vitor (D-051). Nenhuma alteração em autenticação, RLS, proxy, permissões ou Storage:
+- **A planilha real agora é aceita e lida por inteiro: 48 lançamentos, 0 problemas.** O que a recusava: o normalizador de cabeçalhos transformava `Valor (R$)` em `valor r` (o `R` do `R$` sobrevivia à limpeza de pontuação) e o campo obrigatório "Valor" era dado como ausente. Agora o trecho entre parênteses é descartado inteiro — vale para `(R$)`, `(un)`, `(%)` e o que mais vier.
+- **Centro de Custo → Grupo** e **Categoria → Classificação**: casamento por nome contra o cadastro **lido do banco** (funciona para valores novos sem precisar de deploy), mais uma tabela curta de sinônimos. Quando a Categoria resolve, o Grupo vem dela — é o grupo verdadeiro daquela classificação. Sem correspondência segura, **o campo fica vazio e a prévia diz que precisa ser completado**; nenhum enquadramento contábil é adivinhado.
+- **Conta bancária**: `CEF AGUANAMBI FREIOS LTDA` → `Banco 1 - CEF` (o cadastro tem duas contas na Caixa; a outra é de outra empresa do grupo). **`PIX` deixa o banco em branco** e define a forma de pagamento — a coluna informa o meio, não a conta de onde o dinheiro saiu.
+- **Valor é o da parcela, não do contrato**: gravado como veio, sem calcular total. `08/12` vira parcela 8 de 12.
+- **Valores negativos** convertidos para positivo, com o original preservado em `origem_dados`. **`------` tratado como vazio** — antes derrubava as linhas ainda não liquidadas.
+- **CNPJ segue fora do cadastro de fornecedores** (é o da própria empresa) e fora das chaves de identidade.
+- **Duplicidade**: chave `fornecedor + documento + vencimento + valor`. No arquivo real, **48 chaves para 48 lançamentos — nenhuma despesa some**. Coincidência fraca vira "verificar", nunca descarte.
+- **Reimportação**: 0 novos na segunda vez, e nada que o usuário completou é apagado.
+
 ### Adicionado — Importador de despesas por planilha, primeira versão (2026-08-20)
 Novo botão **"Importar AutEM"** em Financeiro → Contas a Pagar (D-050). Nenhuma alteração em autenticação, proxy, RLS, Storage ou permissões:
 - **⚠️ O layout usado para homologação é FICTÍCIO.** Nenhum arquivo real de exportação de despesas da AutEM foi recebido até aqui — as colunas reconhecidas reproduzem apenas a lista de campos informada pelo Vitor. **O layout oficial ainda precisa ser validado com um arquivo real.**

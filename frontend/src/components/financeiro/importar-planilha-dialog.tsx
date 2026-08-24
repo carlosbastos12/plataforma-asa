@@ -305,6 +305,22 @@ function Previa({
             guardadas junto de cada conta, e nada é classificado por conta própria.
           </p>
         )}
+
+        {/* O que a origem não resolve e alguém precisa completar depois.
+            Dito antes da confirmação para a expectativa ficar certa: a
+            conta entra com o que a AutEM tem, e o resto continua à mão. */}
+        <p className="rounded-lg bg-secondary/50 px-3 py-2 text-[12px] leading-relaxed text-muted-foreground">
+          <strong className="text-foreground">Depois de importar, falta completar:</strong> Grupo,
+          Classificação, Estabelecimento, Histórico e Banco não vêm na planilha — você preenche em cada conta,
+          quando quiser.
+          {resumo.comComplemento > 0 && (
+            <>
+              {" "}
+              <strong className="text-foreground">{resumo.comComplemento}</strong> lançamento(s) trazem
+              informação que o sistema não soube encaixar sozinho — o detalhe aparece na linha.
+            </>
+          )}
+        </p>
       </div>
 
       {/* Só a tabela rola, e só na vertical. */}
