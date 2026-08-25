@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   CalendarClock,
   AlertTriangle,
@@ -39,6 +39,7 @@ import { ImportarPlanilhaDialog } from "./importar-planilha-dialog";
 import { formatarData, formatarMoeda } from "@/lib/financeiro/formato";
 import { calcularIndicadores } from "@/lib/financeiro/indicadores";
 import { aplicarFiltros, FILTROS_VAZIOS, type FiltrosContas } from "@/lib/financeiro/filtros";
+import { agruparPorMesVencimento } from "@/lib/financeiro/agrupamento";
 import { exportarContasPdf, exportarContasXlsx } from "@/lib/financeiro/exportacoes";
 import type {
   Banco,
@@ -84,6 +85,11 @@ export function ContasView({
 
   const visiveis = useMemo(() => aplicarFiltros(linhas, filtros), [linhas, filtros]);
   const indicadores = useMemo(() => calcularIndicadores(visiveis), [visiveis]);
+
+  // Agrupa o que JÁ passou pelo filtro (não a lista completa): assim a
+  // separação por mês acompanha o resultado filtrado sozinha, sem
+  // precisar saber que filtro existe.
+  const grupos = useMemo(() => agruparPorMesVencimento(visiveis), [visiveis]);
 
   // Uma conta só pode ser apagada de vez se nunca recebeu pagamento —
   // calculado sobre TODAS as linhas (não só as filtradas), porque é uma
@@ -270,97 +276,124 @@ export function ContasView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visiveis.map((l) => {
-                    const quitada = l.status === "paga" || l.status === "cancelada";
-                    return (
-                      <TableRow key={l.parcela_id}>
-                        <TableCell>
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {l.fornecedor_nome ?? "Sem fornecedor"}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">{l.descricao}</p>
-                        </TableCell>
-                        <TableCell className="truncate text-sm text-muted-foreground">
-                          {l.numero_documento ?? "—"}
-                        </TableCell>
-                        <TableCell className="truncate text-sm text-muted-foreground">
-                          {l.classificacao_nome ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-sm tabular-nums text-muted-foreground">
-                          {l.parcela_numero}/{l.parcela_total}
-                        </TableCell>
-                        <TableCell className="text-sm tabular-nums">
-                          <p>{formatarData(l.parcela_vencimento)}</p>
-                          {/* Atraso embaixo da data, não do lado: assim a
-                              coluna não precisa reservar espaço horizontal
-                              extra só para os dias em atraso. */}
-                          {l.dias_em_atraso > 0 && (
-                            <p className="text-xs font-medium text-destructive">+{l.dias_em_atraso}d</p>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right text-sm font-semibold tabular-nums">
-                          {formatarMoeda(l.parcela_valor)}
-                        </TableCell>
-                        <TableCell>
-                          <StatusParcelaBadge status={l.status} compacto />
-                        </TableCell>
-                        <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
-                          {l.total_pago > 0 ? formatarMoeda(l.total_pago) : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {!quitada && (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <Button
-                                      variant="outline"
-                                      size="icon-xs"
-                                      aria-label="Registrar pagamento"
-                                      onClick={() => setParcelaEmPagamento(l)}
-                                    />
-                                  }
-                                >
-                                  <Banknote className="size-3.5" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top">Registrar pagamento</TooltipContent>
-                              </Tooltip>
-                            )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                render={<Button variant="ghost" size="icon-xs" aria-label="Mais ações da conta" />}
-                              >
-                                <MoreVertical className="size-3.5" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setContaEmEdicaoId(l.conta_id)}>
-                                  <Pencil className="size-4" /> Editar conta
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setContaDocumentosId(l.conta_id)}>
-                                  <Paperclip className="size-4" /> Documentos
-                                </DropdownMenuItem>
-                                {contasComPagamento.has(l.conta_id) ? (
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => setAcaoRemocao({ linha: l, modo: "cancelar" })}
-                                  >
-                                    <Ban className="size-4" /> Cancelar conta
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => setAcaoRemocao({ linha: l, modo: "remover" })}
-                                  >
-                                    <Trash2 className="size-4" /> Remover conta
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                  {grupos.map((g) => (
+                    <Fragment key={g.chave}>
+                      {/*
+                        Faixa de mês: uma linha da própria tabela, com
+                        colSpan cobrindo todas as colunas. Feita assim, e
+                        não como uma tabela por mês, porque mantém uma
+                        única tabela — as colunas continuam alinhadas de
+                        um mês para o outro, o cabeçalho não se repete e
+                        a largura segue governada pelo colgroup acima
+                        (nada aqui pode reintroduzir rolagem horizontal).
+                        O colSpan precisa acompanhar o número de colunas
+                        do colgroup.
+                      */}
+                      <tr className="border-b border-border bg-secondary/60">
+                        <td colSpan={9} className="py-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-[11.5px] font-bold tracking-wide text-muted-foreground uppercase">
+                              {g.rotulo}
+                            </span>
+                            <span className="text-[11px] tabular-nums text-muted-faint">
+                              {g.linhas.length} conta{g.linhas.length > 1 ? "s" : ""} · {formatarMoeda(g.total)}
+                            </span>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                        </td>
+                      </tr>
+                      {g.linhas.map((l) => {
+                        const quitada = l.status === "paga" || l.status === "cancelada";
+                        return (
+                          <TableRow key={l.parcela_id}>
+                            <TableCell>
+                              <p className="truncate text-sm font-medium text-foreground">
+                                {l.fornecedor_nome ?? "Sem fornecedor"}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground">{l.descricao}</p>
+                            </TableCell>
+                            <TableCell className="truncate text-sm text-muted-foreground">
+                              {l.numero_documento ?? "—"}
+                            </TableCell>
+                            <TableCell className="truncate text-sm text-muted-foreground">
+                              {l.classificacao_nome ?? "—"}
+                            </TableCell>
+                            <TableCell className="text-sm tabular-nums text-muted-foreground">
+                              {l.parcela_numero}/{l.parcela_total}
+                            </TableCell>
+                            <TableCell className="text-sm tabular-nums">
+                              <p>{formatarData(l.parcela_vencimento)}</p>
+                              {/* Atraso embaixo da data, não do lado: assim a
+                                  coluna não precisa reservar espaço horizontal
+                                  extra só para os dias em atraso. */}
+                              {l.dias_em_atraso > 0 && (
+                                <p className="text-xs font-medium text-destructive">+{l.dias_em_atraso}d</p>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-semibold tabular-nums">
+                              {formatarMoeda(l.parcela_valor)}
+                            </TableCell>
+                            <TableCell>
+                              <StatusParcelaBadge status={l.status} compacto />
+                            </TableCell>
+                            <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                              {l.total_pago > 0 ? formatarMoeda(l.total_pago) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {!quitada && (
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={
+                                        <Button
+                                          variant="outline"
+                                          size="icon-xs"
+                                          aria-label="Registrar pagamento"
+                                          onClick={() => setParcelaEmPagamento(l)}
+                                        />
+                                      }
+                                    >
+                                      <Banknote className="size-3.5" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">Registrar pagamento</TooltipContent>
+                                  </Tooltip>
+                                )}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={<Button variant="ghost" size="icon-xs" aria-label="Mais ações da conta" />}
+                                  >
+                                    <MoreVertical className="size-3.5" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setContaEmEdicaoId(l.conta_id)}>
+                                      <Pencil className="size-4" /> Editar conta
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setContaDocumentosId(l.conta_id)}>
+                                      <Paperclip className="size-4" /> Documentos
+                                    </DropdownMenuItem>
+                                    {contasComPagamento.has(l.conta_id) ? (
+                                      <DropdownMenuItem
+                                        variant="destructive"
+                                        onClick={() => setAcaoRemocao({ linha: l, modo: "cancelar" })}
+                                      >
+                                        <Ban className="size-4" /> Cancelar conta
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        variant="destructive"
+                                        onClick={() => setAcaoRemocao({ linha: l, modo: "remover" })}
+                                      >
+                                        <Trash2 className="size-4" /> Remover conta
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
                 </TableBody>
               </Table>
             </div>

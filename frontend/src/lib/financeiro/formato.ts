@@ -17,6 +17,38 @@ export function formatarData(iso: string | null): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+const MESES = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+/**
+ * Mês e ano de uma data ISO ("2026-08-31" -> "Agosto 2026").
+ *
+ * Monta a partir do texto, sem `new Date`, pelo mesmo motivo de
+ * `formatarData` logo acima: `new Date("2026-08-01")` é lido como
+ * meia-noite em UTC e, no fuso do Brasil, voltaria para 31/07 — o
+ * cabeçalho mostraria o mês errado justamente nas contas que vencem no
+ * dia 1º.
+ */
+export function rotuloMes(iso: string | null): string {
+  if (!iso) return "Sem vencimento";
+  const [ano, mes] = iso.slice(0, 10).split("-");
+  const nome = MESES[Number(mes) - 1];
+  if (!ano || !nome) return "Sem vencimento";
+  return `${nome} ${ano}`;
+}
+
 /** Data de hoje em ISO (YYYY-MM-DD), no fuso local — nunca UTC. */
 export function hojeISO(): string {
   const d = new Date();
