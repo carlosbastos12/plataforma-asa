@@ -6,6 +6,7 @@ const TABS = [
   { href: "/gestao-da-frota/documentacao", label: "Documentação" },
   { href: "/gestao-da-frota/multas", label: "Multas" },
   { href: "/gestao-da-frota/combustivel", label: "Combustível" },
+  { href: "/gestao-da-frota/almoxarifado", label: "Almoxarifado" },
 ];
 
 export default function GestaoDaFrotaLayout({ children }: { children: React.ReactNode }) {

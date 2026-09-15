@@ -4,6 +4,15 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Manutenção preventiva por km, peças e Almoxarifado na Gestão da Frota (2026-09-15)
+Preparação da demonstração para a Priscila (D-052), a partir do que o Vitor confirmou que ela quer acompanhar: serviços por caminhão, peças utilizadas, gastos de manutenção e a oficina/almoxarifado própria da ASA. Segue 100% no regime de demonstração — dado fictício, sem banco, sem backend:
+- **Semáforo de manutenção preventiva por quilometragem** (troca de óleo): compara última troca + intervalo com o km atual do veículo, reaproveitando o mesmo `DocStatus` de documentos/multas. Aparece no dashboard da Frota (com lista dos veículos vencidos/próximos) e na aba "Manutenções" de cada veículo. Textos nas próprias telas deixam claro que é conceito de demonstração — a atualização automática de km por abastecimento é conceito futuro, não implementado.
+- **Peças utilizadas por serviço**, com quantidade e valor, dentro do histórico de manutenções de cada veículo.
+- **Origem da manutenção — própria ou terceirizada**, com selo visual junto de cada serviço no histórico.
+- **Nova tela `/gestao-da-frota/almoxarifado`**: estoque fictício de peças com quantidade, mínimo, localização física (prateleira/armário) e uma lista de "peças usadas recentemente" cruzando os dados de manutenção de toda a frota. Substituiu o card "Compras da frota", que estava desabilitado ("em breve"), agora como link ativo.
+- Nenhuma mudança em `situacaoVeiculo`/`veredictoVeiculo` (o que decide se um veículo pode operar), em Financeiro, banco ou autenticação.
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` (39 páginas) limpos. Sem framework de testes automatizados configurado no projeto.
+
 ### Corrigido / Adicionado — Importador AutEM ajustado ao layout real (2026-08-21)
 A planilha real da AutEM era recusada logo na primeira tela. Corrigido e concluído com as decisões de negócio confirmadas pelo Vitor (D-051). Nenhuma alteração em autenticação, RLS, proxy, permissões ou Storage:
 - **A planilha real agora é aceita e lida por inteiro: 48 lançamentos, 0 problemas.** O que a recusava: o normalizador de cabeçalhos transformava `Valor (R$)` em `valor r` (o `R` do `R$` sobrevivia à limpeza de pontuação) e o campo obrigatório "Valor" era dado como ausente. Agora o trecho entre parênteses é descartado inteiro — vale para `(R$)`, `(un)`, `(%)` e o que mais vier.

@@ -29,12 +29,33 @@ export interface Multa {
   prazoIndicacao?: string;
 }
 
+export interface Peca {
+  nome: string;
+  qtd: number;
+  valor: number;
+}
+
 export interface Manutencao {
   data: string;
   km: number;
   servico: string;
   oficina: string;
+  /** "propria" = oficina/mecânica interna da ASA; "terceirizada" = oficina externa. */
+  origem: "propria" | "terceirizada";
   valor: number;
+  pecas: Peca[];
+}
+
+/**
+ * Controle preventivo por quilometragem (ex.: troca de óleo). Conceito de
+ * demonstração (P0xx): compara a última troca + intervalo previsto com a
+ * quilometragem atual do veículo. Não há atualização automática de km —
+ * isso é conceito futuro, não implementado nesta fase.
+ */
+export interface ManutencaoPreventiva {
+  servico: string;
+  ultimaTrocaKm: number;
+  intervaloKm: number;
 }
 
 export interface Veiculo {
@@ -47,6 +68,7 @@ export interface Veiculo {
   docs: DocumentoFrota[];
   multas: Multa[];
   manutencoes: Manutencao[];
+  preventivas: ManutencaoPreventiva[];
 }
 
 function dias(dataISO: string): number {
@@ -74,6 +96,55 @@ export function diasRestantes(dataISO: string): number {
   return dias(dataISO);
 }
 
+export function proximaTrocaKm(p: ManutencaoPreventiva): number {
+  return p.ultimaTrocaKm + p.intervaloKm;
+}
+
+export function kmRestantes(atualKm: number, p: ManutencaoPreventiva): number {
+  return proximaTrocaKm(p) - atualKm;
+}
+
+/**
+ * "Vencida" (km atual já passou da próxima troca), "atenção" (dentro dos
+ * últimos 30% do intervalo) ou "em dia" — mesmo semáforo de DocStatus,
+ * só que por quilometragem em vez de data.
+ */
+export function statusPreventiva(atualKm: number, p: ManutencaoPreventiva): DocStatus {
+  const restante = kmRestantes(atualKm, p);
+  if (restante < 0) return "critico";
+  if (restante <= p.intervaloKm * 0.3) return "atencao";
+  return "regular";
+}
+
+/* ---------------- Almoxarifado (estoque de peças da oficina própria) ---------------- */
+
+export interface ItemAlmoxarifado {
+  id: string;
+  nome: string;
+  categoria: "Lubrificantes" | "Filtros" | "Freios" | "Pneus" | "Motor";
+  quantidade: number;
+  quantidadeMinima: number;
+  localizacao: string;
+}
+
+export const ALMOXARIFADO: ItemAlmoxarifado[] = [
+  { id: "PC-01", nome: "Óleo motor 15W40 (20L)", categoria: "Lubrificantes", quantidade: 8, quantidadeMinima: 5, localizacao: "Prateleira A1 — Lubrificantes" },
+  { id: "PC-02", nome: "Graxa multiuso (bisnaga)", categoria: "Lubrificantes", quantidade: 12, quantidadeMinima: 4, localizacao: "Prateleira A1 — Lubrificantes" },
+  { id: "PC-03", nome: "Filtro de óleo", categoria: "Filtros", quantidade: 3, quantidadeMinima: 6, localizacao: "Armário B2 — Filtros" },
+  { id: "PC-04", nome: "Filtro de combustível", categoria: "Filtros", quantidade: 5, quantidadeMinima: 4, localizacao: "Armário B2 — Filtros" },
+  { id: "PC-05", nome: "Pastilha de freio dianteira (jogo)", categoria: "Freios", quantidade: 2, quantidadeMinima: 3, localizacao: "Prateleira C3 — Freios" },
+  { id: "PC-06", nome: "Disco de freio dianteiro", categoria: "Freios", quantidade: 0, quantidadeMinima: 2, localizacao: "Prateleira C3 — Freios" },
+  { id: "PC-07", nome: "Pneu 295/80 R22.5", categoria: "Pneus", quantidade: 4, quantidadeMinima: 4, localizacao: "Depósito externo — Pátio de pneus" },
+  { id: "PC-08", nome: "Correia dentada", categoria: "Motor", quantidade: 6, quantidadeMinima: 2, localizacao: "Armário B4 — Motor" },
+];
+
+/** Mesmo semáforo de estoque usado no tanque de diesel (lib/combustivel.ts), aplicado a peças. */
+export function statusEstoque(item: ItemAlmoxarifado): DocStatus {
+  if (item.quantidade <= 0) return "critico";
+  if (item.quantidade <= item.quantidadeMinima) return "atencao";
+  return "regular";
+}
+
 export const FROTA: Veiculo[] = [
   {
     placa: "RDX4A17",
@@ -93,8 +164,21 @@ export const FROTA: Veiculo[] = [
       { id: "MU-2201", orgao: "AMC", data: "2026-08-02", valor: 267.9, status: "aguardando_indicacao", prazoIndicacao: "2026-08-19" },
     ],
     manutencoes: [
-      { data: "2026-07-28", km: 80_900, servico: "Revisão preventiva 80.000 km", oficina: "Oficina Torque Certo", valor: 2180 },
+      {
+        data: "2026-07-28",
+        km: 80_900,
+        servico: "Revisão preventiva 80.000 km",
+        oficina: "Oficina Torque Certo",
+        origem: "terceirizada",
+        valor: 2180,
+        pecas: [
+          { nome: "Óleo motor 15W40 (20L)", qtd: 1, valor: 640 },
+          { nome: "Filtro de óleo", qtd: 1, valor: 85 },
+          { nome: "Filtro de combustível", qtd: 1, valor: 120 },
+        ],
+      },
     ],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 70_000, intervaloKm: 10_000 }],
   },
   {
     placa: "BLN2C88",
@@ -113,8 +197,29 @@ export const FROTA: Veiculo[] = [
     ],
     multas: [],
     manutencoes: [
-      { data: "2026-08-01", km: 141_900, servico: "Alinhamento e balanceamento", oficina: "Rota Norte Diesel", valor: 480 },
+      {
+        data: "2026-08-01",
+        km: 141_900,
+        servico: "Alinhamento e balanceamento",
+        oficina: "Rota Norte Diesel",
+        origem: "terceirizada",
+        valor: 480,
+        pecas: [],
+      },
+      {
+        data: "2026-07-10",
+        km: 141_200,
+        servico: "Troca de óleo e filtro",
+        oficina: "Oficina própria ASA",
+        origem: "propria",
+        valor: 620,
+        pecas: [
+          { nome: "Óleo motor 15W40 (20L)", qtd: 1, valor: 540 },
+          { nome: "Filtro de óleo", qtd: 1, valor: 80 },
+        ],
+      },
     ],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 135_000, intervaloKm: 10_000 }],
   },
   {
     placa: "KPT9F03",
@@ -135,8 +240,17 @@ export const FROTA: Veiculo[] = [
       { id: "MU-2196", orgao: "DNIT", data: "2026-07-20", valor: 880.41, status: "paga" },
     ],
     manutencoes: [
-      { data: "2026-08-10", km: 197_900, servico: "Troca de pneus dianteiros", oficina: "Rota Norte Diesel", valor: 3420 },
+      {
+        data: "2026-08-10",
+        km: 197_900,
+        servico: "Troca de pneus dianteiros",
+        oficina: "Rota Norte Diesel",
+        origem: "terceirizada",
+        valor: 3420,
+        pecas: [{ nome: "Pneu 295/80 R22.5", qtd: 2, valor: 1650 }],
+      },
     ],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 185_000, intervaloKm: 10_000 }],
   },
   {
     placa: "MWZ5H61",
@@ -154,7 +268,21 @@ export const FROTA: Veiculo[] = [
       { tipo: "Tacógrafo", emissao: "2026-05-01", vencimento: "2026-11-01" },
     ],
     multas: [],
-    manutencoes: [],
+    manutencoes: [
+      {
+        data: "2026-08-05",
+        km: 39_000,
+        servico: "Troca de óleo e filtro",
+        oficina: "Oficina própria ASA",
+        origem: "propria",
+        valor: 610,
+        pecas: [
+          { nome: "Óleo motor 15W40 (20L)", qtd: 1, valor: 530 },
+          { nome: "Filtro de óleo", qtd: 1, valor: 80 },
+        ],
+      },
+    ],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 35_000, intervaloKm: 10_000 }],
   },
   {
     placa: "TCV3B29",
@@ -170,6 +298,7 @@ export const FROTA: Veiculo[] = [
     ],
     multas: [],
     manutencoes: [],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 25_000, intervaloKm: 10_000 }],
   },
   {
     placa: "OGN7D14",
@@ -185,6 +314,7 @@ export const FROTA: Veiculo[] = [
     ],
     multas: [],
     manutencoes: [],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 10_000, intervaloKm: 4_000 }],
   },
   {
     placa: "VYX1E92",
@@ -205,8 +335,20 @@ export const FROTA: Veiculo[] = [
       { id: "MU-2205", orgao: "DETRAN", data: "2026-08-05", valor: 195.23, status: "aguardando_indicacao", prazoIndicacao: "2026-08-20" },
     ],
     manutencoes: [
-      { data: "2026-07-15", km: 225_800, servico: "Revisão do sistema de freios", oficina: "Oficina Torque Certo", valor: 1360 },
+      {
+        data: "2026-07-15",
+        km: 225_800,
+        servico: "Revisão do sistema de freios",
+        oficina: "Oficina Torque Certo",
+        origem: "terceirizada",
+        valor: 1360,
+        pecas: [
+          { nome: "Pastilha de freio dianteira (jogo)", qtd: 1, valor: 340 },
+          { nome: "Disco de freio dianteiro", qtd: 2, valor: 780 },
+        ],
+      },
     ],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 215_000, intervaloKm: 10_000 }],
   },
   {
     placa: "HQF6K05",
@@ -226,7 +368,21 @@ export const FROTA: Veiculo[] = [
     multas: [
       { id: "MU-2158", orgao: "AMC", data: "2026-05-30", valor: 195.23, status: "paga" },
     ],
-    manutencoes: [],
+    manutencoes: [
+      {
+        data: "2026-07-10",
+        km: 107_800,
+        servico: "Troca de óleo e filtro",
+        oficina: "Oficina própria ASA",
+        origem: "propria",
+        valor: 615,
+        pecas: [
+          { nome: "Óleo motor 15W40 (20L)", qtd: 1, valor: 535 },
+          { nome: "Filtro de óleo", qtd: 1, valor: 80 },
+        ],
+      },
+    ],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 100_000, intervaloKm: 10_000 }],
   },
   {
     placa: "ZBR8L37",
@@ -242,6 +398,7 @@ export const FROTA: Veiculo[] = [
     ],
     multas: [],
     manutencoes: [],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 21_000, intervaloKm: 4_000 }],
   },
   {
     placa: "JMT2P74",
@@ -257,6 +414,7 @@ export const FROTA: Veiculo[] = [
     ],
     multas: [],
     manutencoes: [],
+    preventivas: [{ servico: "Troca de óleo", ultimaTrocaKm: 15_000, intervaloKm: 10_000 }],
   },
 ];
 
