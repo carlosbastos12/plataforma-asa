@@ -5,6 +5,7 @@ import { StatCard } from "@/components/home/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { PecaFormDialog } from "./peca-form-dialog";
 import { useEstoque } from "./estoque-provider";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import {
   MANUTENCOES,
   UNIDADES_MEDIDA,
@@ -18,6 +19,18 @@ import {
 function siglaUnidade(item: ItemAlmoxarifado): string {
   return UNIDADES_MEDIDA.find((u) => u.valor === item.unidade)?.sigla ?? "un.";
 }
+
+const AJUDA_ESTOQUE: TopicoAjuda[] = [
+  {
+    titulo: "Estoque mínimo",
+    texto: "É a quantidade mínima desejada para manter a peça disponível. Quando o estoque chega perto ou abaixo desse limite, o item é sinalizado para reposição.",
+  },
+  {
+    titulo: "Localização física",
+    texto: "Cada peça tem um lugar físico registrado — armário, prateleira e caixa — para a equipe encontrar rapidamente o que precisa.",
+    exemplo: "Armário C3, Prateleira 02, Caixa 04 → C3 / P02 / C04",
+  },
+];
 
 /**
  * Estoque de Peças — lê o EstoqueProvider (Context montado no layout do
@@ -48,7 +61,14 @@ export function EstoqueView() {
             Peças da oficina própria, com localização física, custo e alerta antes de faltar.
           </p>
         </div>
-        <PecaFormDialog onCadastrar={cadastrarPeca} />
+        <div className="flex items-center gap-2">
+          <ComoFunciona
+            titulo="Como funciona o Estoque de Peças?"
+            resumo="Este módulo permite controlar as peças disponíveis para manutenção, saber quanto existe em estoque, identificar itens que precisam de reposição e localizar fisicamente cada peça."
+            topicos={AJUDA_ESTOQUE}
+          />
+          <PecaFormDialog onCadastrar={cadastrarPeca} />
+        </div>
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">

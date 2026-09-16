@@ -5,6 +5,18 @@ import { StatCard } from "@/components/home/stat-card";
 import { FROTA, ALMOXARIFADO, MANUTENCOES, situacaoVeiculo, statusVencimento, statusPreventiva, statusEstoque } from "@/lib/mock-data";
 import { diasDeAutonomiaTanque } from "@/lib/combustivel";
 import { PreventivaCard } from "@/components/frota/preventiva-card";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
+
+const AJUDA_PREVENTIVA: TopicoAjuda[] = [
+  {
+    titulo: "Como o cálculo funciona",
+    texto: "Soma a quilometragem da última troca com o intervalo previsto para saber quando é a próxima. Se o veículo já passou desse número, a manutenção está em atraso.",
+    exemplo: "Última troca 240.000 km + intervalo 10.000 km = próxima em 250.000 km. Em 251.200 km, são 1.200 km em atraso.",
+  },
+  { titulo: "🔴 Vencida", texto: "A quilometragem prevista para a manutenção já foi ultrapassada." },
+  { titulo: "🟡 Próxima", texto: "A manutenção está próxima do limite previsto." },
+  { titulo: "🟢 Em dia", texto: "A quilometragem atual ainda está dentro do intervalo previsto." },
+];
 
 export default function GestaoDaFrotaPage() {
   const todosDocs = FROTA.flatMap((v) => v.docs);
@@ -101,6 +113,12 @@ export default function GestaoDaFrotaPage() {
             <div className="flex items-center gap-2">
               <Wrench className="size-4 text-muted-foreground" strokeWidth={2.25} />
               <h3 className="text-sm font-semibold text-foreground">Manutenção preventiva por quilometragem</h3>
+              <ComoFunciona
+                titulo="Como funciona a manutenção preventiva?"
+                resumo="O sistema compara a quilometragem atual do veículo com a quilometragem prevista para a próxima manutenção."
+                topicos={AJUDA_PREVENTIVA}
+                rotulo="Entenda"
+              />
             </div>
             <Link href="/manutencao" className="text-xs font-medium text-primary">
               Ver módulo de Manutenção →

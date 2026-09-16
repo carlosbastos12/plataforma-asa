@@ -7,7 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { UNIDADES_MEDIDA, type ItemAlmoxarifado, type UnidadeMedida } from "@/lib/mock-data";
+
+const AJUDA_CADASTRO_PECA: TopicoAjuda[] = [
+  {
+    titulo: "Localização física",
+    texto: "Ajuda a equipe a encontrar rapidamente a peça dentro do estoque — assim o sistema informa não só qual peça existe, mas também onde ela está guardada.",
+    exemplo: "Armário C3 / Prateleira 02 / Caixa 04 → C3 / P02 / C04",
+  },
+  {
+    titulo: "Estoque mínimo",
+    texto: "Quantidade mínima desejada para manter a peça disponível. Quando o estoque chegar próximo ou abaixo desse limite, o item pode ser sinalizado para reposição.",
+  },
+  {
+    titulo: "Custo unitário",
+    texto: "É o custo pago pela ASA pela unidade da peça — não é preço de venda. Esse valor é usado para calcular o consumo nas manutenções.",
+  },
+];
 
 /**
  * Cadastro de peça no Estoque — mesmo padrão dos demais formulários da
@@ -77,6 +94,13 @@ export function PecaFormDialog({ onCadastrar }: { onCadastrar: (item: ItemAlmoxa
       <DialogContent className="gap-4 p-6 sm:max-w-md">
         <DialogTitle>Cadastrar peça</DialogTitle>
         <DialogDescription>Dados da peça, estoque, localização física e custo — tudo num só lugar.</DialogDescription>
+        <div className="-mt-2">
+          <ComoFunciona
+            titulo="Como funciona o cadastro de peça?"
+            resumo="O cadastro identifica a peça, define seu estoque inicial, estoque mínimo, custo unitário e localização física."
+            topicos={AJUDA_CADASTRO_PECA}
+          />
+        </div>
 
         <div className="flex max-h-[65vh] flex-col gap-5 overflow-y-auto pr-1">
           <div className="flex flex-col gap-3">

@@ -2,7 +2,19 @@ import Link from "next/link";
 import { Wrench, ClipboardList, ShieldCheck, ShieldAlert, Package, Banknote } from "lucide-react";
 import { StatCard } from "@/components/home/stat-card";
 import { TipoManutencaoBadge, StatusManutencaoBadge } from "@/components/manutencao/badges";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { MANUTENCOES, FROTA, formatarData, formatarMoeda, totalPecas, totalServicosTerceirizados } from "@/lib/mock-data";
+
+const AJUDA_MANUTENCAO: TopicoAjuda[] = [
+  {
+    titulo: "Indicadores desta tela",
+    texto: "Mostram quantas manutenções foram registradas, quantas são preventivas ou corretivas, quantos veículos têm manutenção em andamento e quanto foi gasto com peças e com serviços terceirizados.",
+  },
+  {
+    titulo: "Ver ou registrar uma manutenção",
+    texto: "Use a aba \"Manutenções\", no topo, para ver a lista completa da frota ou registrar um novo serviço.",
+  },
+];
 
 export default function ManutencaoPage() {
   const preventivas = MANUTENCOES.filter((m) => m.tipo === "preventiva").length;
@@ -14,12 +26,19 @@ export default function ManutencaoPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-base font-semibold text-foreground">Serviços realizados na frota, com peças e custo por manutenção</h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Cada manutenção junta peças utilizadas e serviços realizados num só lugar — própria ou terceirizada, com
-          o total já calculado.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Serviços realizados na frota, com peças e custo por manutenção</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Cada manutenção junta peças utilizadas e serviços realizados num só lugar — própria ou terceirizada, com
+            o total já calculado.
+          </p>
+        </div>
+        <ComoFunciona
+          titulo="Como funciona a Manutenção?"
+          resumo="Aqui ficam reunidas as manutenções realizadas nos veículos da frota. Cada manutenção registra o veículo, data, quilometragem, peças utilizadas e serviços realizados, permitindo acompanhar o histórico e o custo de manutenção de cada caminhão."
+          topicos={AJUDA_MANUTENCAO}
+        />
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">

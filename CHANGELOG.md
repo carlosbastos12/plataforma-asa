@@ -4,6 +4,13 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Ajuda contextual "Como funciona?" em Manutenção e Estoque de Peças (2026-09-16)
+Melhoria de UX para a apresentação à Priscila (D-056): botão "Como funciona?"/"Entenda" em todas as funcionalidades novas das últimas missões, reaproveitando o componente `ComoFunciona` que já existia no Financeiro — nenhum componente de ajuda novo foi criado.
+- Pop-up explicativo, curto e sem termos técnicos, em: Visão Geral da Manutenção, listagem de Manutenções, "Nova manutenção" (geral + Peças utilizadas + Serviços realizados), Estoque de Peças, "Cadastrar peça", Movimentações, manutenção preventiva por km (Visão Geral da Frota) e aba "Manutenções" do prontuário do veículo.
+- Botão só abre quando clicado — nenhuma tela ganhou pop-up automático.
+- Nenhuma lógica funcional alterada: só texto + o componente de ajuda já existente.
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` limpos; presença dos botões de ajuda conferida nas páginas com o servidor local sem exigência de login (mesma técnica das missões anteriores).
+
 ### Corrigido — Estoque de peças compartilhado entre Estoque e Manutenção (2026-09-16)
 Corrige a limitação registrada na entrega anterior (D-055): uma peça cadastrada em Estoque de Peças não aparecia no seletor "Estoque próprio" da Nova Manutenção se as telas fossem abertas em momentos diferentes.
 - **`EstoqueProvider`** (Context React simples, mesmo padrão já usado por `ApresentacaoProvider`) montado em `(dashboard)/layout.tsx` — Estoque de Peças e Manutenção passam a ler e escrever o mesmo estado de peças durante a sessão.

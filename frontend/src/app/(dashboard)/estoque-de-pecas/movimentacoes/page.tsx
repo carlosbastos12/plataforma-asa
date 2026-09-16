@@ -2,11 +2,19 @@ import type { Metadata } from "next";
 import { ArrowDownCircle, ArrowUpCircle, RefreshCcw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ALMOXARIFADO, MOVIMENTACOES_ESTOQUE, formatarData, type TipoMovimentacaoEstoque } from "@/lib/mock-data";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Movimentações de Estoque",
 };
+
+const AJUDA_MOVIMENTACOES: TopicoAjuda[] = [
+  {
+    titulo: "Ainda é uma demonstração",
+    texto: "Nesta versão, as movimentações são simuladas. A integração real com o estoque será implementada posteriormente.",
+  },
+];
 
 const ICONE: Record<TipoMovimentacaoEstoque, LucideIcon> = { entrada: ArrowDownCircle, saida: ArrowUpCircle, ajuste: RefreshCcw };
 const LABEL: Record<TipoMovimentacaoEstoque, string> = { entrada: "Entrada", saida: "Saída", ajuste: "Ajuste" };
@@ -21,11 +29,18 @@ export default function MovimentacoesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">Movimentações do estoque</h2>
-        <p className="text-sm text-muted-foreground">
-          Entradas, saídas para manutenção e ajustes — histórico fictício, sem baixa automática de saldo.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Movimentações do estoque</h2>
+          <p className="text-sm text-muted-foreground">
+            Entradas, saídas para manutenção e ajustes — histórico fictício, sem baixa automática de saldo.
+          </p>
+        </div>
+        <ComoFunciona
+          titulo="Como funcionam as movimentações?"
+          resumo="Registra entradas e saídas de peças. Uma saída pode ocorrer quando uma peça é utilizada em uma manutenção."
+          topicos={AJUDA_MOVIMENTACOES}
+        />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card">

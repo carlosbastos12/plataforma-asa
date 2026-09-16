@@ -20,7 +20,15 @@ import { VehicleTimeline } from "@/components/frota/vehicle-timeline";
 import { PreventivaCard } from "@/components/frota/preventiva-card";
 import { ManutencaoDetalhe } from "@/components/manutencao/manutencao-detalhe";
 import { TipoManutencaoBadge, StatusManutencaoBadge } from "@/components/manutencao/badges";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { cn } from "@/lib/utils";
+
+const AJUDA_HISTORICO_VEICULO: TopicoAjuda[] = [
+  {
+    titulo: "Para ver toda a frota",
+    texto: "Para consultar todas as manutenções da frota ou registrar uma nova manutenção, utilize o módulo Manutenção, no menu lateral.",
+  },
+];
 
 export function generateStaticParams() {
   return FROTA.map((v) => ({ placa: v.placa }));
@@ -193,6 +201,15 @@ export default async function VeiculoDetalhePage({
         </TabsContent>
 
         <TabsContent value="manutencoes" className="mt-5 flex flex-col gap-5">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[13px] font-medium text-muted-foreground">Histórico de manutenções deste veículo</p>
+            <ComoFunciona
+              titulo="Como funciona esta aba?"
+              resumo="Este é o histórico das manutenções realizadas neste veículo."
+              topicos={AJUDA_HISTORICO_VEICULO}
+              rotulo="Entenda"
+            />
+          </div>
           {veiculo.preventivas.length > 0 && (
             <div className="flex flex-col gap-3">
               <p className="text-[13px] font-medium text-muted-foreground">

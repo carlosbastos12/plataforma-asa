@@ -4,7 +4,9 @@
 
 ## Fase atual
 
-**Estoque de peças compartilhado entre Estoque e Manutenção durante a sessão (D-055).** `EstoqueProvider` (Context, mesmo padrão do `ApresentacaoProvider`) montado em `(dashboard)/layout.tsx`: uma peça cadastrada em `/estoque-de-pecas` já aparece no seletor "Estoque próprio" da Nova Manutenção, sem precisar recarregar a página. Fluxo ponta a ponta (cadastrar peça → usar na manutenção → conferir custo) funciona de verdade dentro da sessão, ainda sem banco.
+**Ajuda contextual "Como funciona?" em todas as telas novas de Manutenção e Estoque de Peças (D-056).** Reaproveita o componente `ComoFunciona` que já existia (estreado no Financeiro) — 11 pontos de ajuda, texto simples, sem termos técnicos, abrindo só quando clicado. Nenhuma lógica funcional mudou.
+
+**Anterior — Estoque de peças compartilhado entre Estoque e Manutenção durante a sessão (D-055).** `EstoqueProvider` (Context, mesmo padrão do `ApresentacaoProvider`) montado em `(dashboard)/layout.tsx`: uma peça cadastrada em `/estoque-de-pecas` já aparece no seletor "Estoque próprio" da Nova Manutenção, sem precisar recarregar a página. Fluxo ponta a ponta (cadastrar peça → usar na manutenção → conferir custo) funciona de verdade dentro da sessão, ainda sem banco.
 
 **Anterior — Estoque de Peças ganhou cadastro de peça, com custo unitário (D-054).** Botão "+ Cadastrar peça" em `/estoque-de-pecas`; custo copiado/congelado por manutenção no momento em que a peça é adicionada. A limitação de sincronização entre telas registrada nesta missão foi corrigida pela D-055 acima.
 

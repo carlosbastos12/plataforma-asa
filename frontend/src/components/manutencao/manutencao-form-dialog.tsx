@@ -20,7 +20,52 @@ import {
   type TipoManutencao,
 } from "@/lib/mock-data";
 import { useEstoque } from "@/components/estoque/estoque-provider";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { cn } from "@/lib/utils";
+
+const AJUDA_NOVA_MANUTENCAO: TopicoAjuda[] = [
+  {
+    titulo: "Peças + serviços = total",
+    texto: "O sistema soma o custo das peças e dos serviços terceirizados automaticamente — você só registra o que foi usado.",
+  },
+];
+
+const AJUDA_PECAS: TopicoAjuda[] = [
+  {
+    titulo: "Estoque próprio",
+    texto: "Use esta opção quando a peça já estiver disponível no Estoque de Peças. A peça é vinculada à manutenção e a quantidade utilizada representa uma saída do estoque. Na versão atual, esta baixa é demonstrativa — a baixa definitiva será feita pelo estoque integrado.",
+  },
+  {
+    titulo: "Compra para esta manutenção",
+    texto: "Use esta opção quando a peça foi comprada especificamente para este serviço e não fazia parte do estoque.",
+    exemplo: "Uma peça apresentou defeito durante a manutenção e foi comprada só para aquele caminhão.",
+  },
+  {
+    titulo: "Custo unitário",
+    texto: "É o custo pago pela ASA por unidade da peça. O sistema multiplica pela quantidade para calcular o total gasto.",
+    exemplo: "Custo unitário R$ 145,00 × 2 unidades = R$ 290,00",
+  },
+  {
+    titulo: "O custo fica congelado",
+    texto: "O custo usado nesta manutenção é registrado no momento da utilização. Se o preço da mesma peça mudar depois, o valor desta manutenção não muda.",
+  },
+];
+
+const AJUDA_SERVICOS: TopicoAjuda[] = [
+  {
+    titulo: "Serviço próprio",
+    texto: "Realizado pela equipe mecânica da ASA. Aparece como R$ 0,00 porque não representa uma despesa terceirizada.",
+  },
+  {
+    titulo: "Serviço terceirizado",
+    texto: "Realizado por uma empresa ou profissional externo, com o valor cobrado.",
+  },
+  {
+    titulo: "Total da manutenção",
+    texto: "Soma o custo das peças utilizadas com os serviços terceirizados. Serviços próprios não entram nessa conta.",
+    exemplo: "Peças R$ 290,00 + Serviços terceirizados R$ 850,00 = Total R$ 1.140,00",
+  },
+];
 
 function hojeISO() {
   return TODAY.toISOString().slice(0, 10);
@@ -172,6 +217,13 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
         <DialogDescription>
           Veículo → peças utilizadas + serviços realizados → total da manutenção.
         </DialogDescription>
+        <div className="-mt-2">
+          <ComoFunciona
+            titulo="Como funciona uma manutenção?"
+            resumo="Uma manutenção representa um serviço realizado em um veículo. Informe o caminhão, a data e a quilometragem — depois registre as peças utilizadas e os serviços realizados."
+            topicos={AJUDA_NOVA_MANUTENCAO}
+          />
+        </div>
 
         <div className="flex max-h-[65vh] flex-col gap-5 overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-3">
@@ -237,8 +289,16 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
 
           {/* Peças utilizadas */}
           <div className="flex flex-col gap-2.5 rounded-xl border border-border p-3.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[13px] font-semibold text-foreground">Peças utilizadas</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <p className="text-[13px] font-semibold text-foreground">Peças utilizadas</p>
+                <ComoFunciona
+                  titulo="Como funcionam as peças?"
+                  resumo="Registre aqui todas as peças utilizadas nesta manutenção. Elas podem vir do estoque da ASA ou ser compradas especificamente para este serviço."
+                  topicos={AJUDA_PECAS}
+                  rotulo="Entenda"
+                />
+              </div>
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setFormPecaAberto((v) => !v)}>
                 <Plus className="size-3.5" /> Adicionar peça
               </Button>
@@ -366,8 +426,16 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
 
           {/* Serviços realizados */}
           <div className="flex flex-col gap-2.5 rounded-xl border border-border p-3.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[13px] font-semibold text-foreground">Serviços realizados</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <p className="text-[13px] font-semibold text-foreground">Serviços realizados</p>
+                <ComoFunciona
+                  titulo="Como funcionam os serviços?"
+                  resumo="Registre os serviços realizados durante a manutenção."
+                  topicos={AJUDA_SERVICOS}
+                  rotulo="Entenda"
+                />
+              </div>
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setFormServicoAberto((v) => !v)}>
                 <Plus className="size-3.5" /> Adicionar serviço
               </Button>

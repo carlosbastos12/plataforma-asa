@@ -6,7 +6,19 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { ManutencaoFormDialog } from "./manutencao-form-dialog";
 import { ManutencaoDetalhe } from "./manutencao-detalhe";
 import { TipoManutencaoBadge, StatusManutencaoBadge } from "./badges";
+import { ComoFunciona, type TopicoAjuda } from "@/components/ajuda/como-funciona";
 import { MANUTENCOES, FROTA, formatarData, formatarMoeda, totalManutencao, type Manutencao } from "@/lib/mock-data";
+
+const AJUDA_MANUTENCOES: TopicoAjuda[] = [
+  {
+    titulo: "Cada manutenção é de um veículo",
+    texto: "Toda manutenção fica vinculada a um caminhão específico — a placa aparece junto do registro.",
+  },
+  {
+    titulo: "Ver o detalhe completo",
+    texto: "Clique em qualquer manutenção da lista para ver as peças utilizadas, os serviços realizados e o custo total.",
+  },
+];
 
 /**
  * Todas as manutenções da frota (módulo Manutenção). Estado local iniciado
@@ -27,7 +39,14 @@ export function ManutencoesView() {
           <h2 className="text-lg font-semibold tracking-tight text-foreground">Todas as manutenções da frota</h2>
           <p className="text-sm text-muted-foreground">{manutencoes.length} registro(s) — peças, serviços e custo de cada um.</p>
         </div>
-        <ManutencaoFormDialog onRegistrar={(m) => setManutencoes((atual) => [m, ...atual])} />
+        <div className="flex items-center gap-2">
+          <ComoFunciona
+            titulo="Como funciona esta lista?"
+            resumo='Esta tela reúne todas as manutenções registradas na frota. Para registrar um novo serviço, clique em "+ Adicionar manutenção".'
+            topicos={AJUDA_MANUTENCOES}
+          />
+          <ManutencaoFormDialog onRegistrar={(m) => setManutencoes((atual) => [m, ...atual])} />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
