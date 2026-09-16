@@ -4,6 +4,14 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Corrigido — Estoque de peças compartilhado entre Estoque e Manutenção (2026-09-16)
+Corrige a limitação registrada na entrega anterior (D-055): uma peça cadastrada em Estoque de Peças não aparecia no seletor "Estoque próprio" da Nova Manutenção se as telas fossem abertas em momentos diferentes.
+- **`EstoqueProvider`** (Context React simples, mesmo padrão já usado por `ApresentacaoProvider`) montado em `(dashboard)/layout.tsx` — Estoque de Peças e Manutenção passam a ler e escrever o mesmo estado de peças durante a sessão.
+- Fluxo ponta a ponta agora funciona: cadastrar peça em Estoque → ir para Manutenção → Nova manutenção → Adicionar peça → Estoque próprio → a peça cadastrada aparece, com estoque disponível, localização e custo unitário corretos.
+- Custo continua congelado por manutenção (sem mudança de comportamento aqui — já garantido desde D-054).
+- Sem biblioteca nova, sem banco, sem mudança de aparência das telas.
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` limpos. Sem navegador automatizado disponível nesta sessão para clique-a-clique — validado por revisão de código e confirmação de que ambas as rotas renderizam sob o novo Provider sem erro.
+
 ### Adicionado — Cadastro de peça no Estoque, com custo unitário (2026-09-16)
 Pequena evolução do Estoque de Peças e da Nova Manutenção (D-054), continuando 100% mock:
 - **Botão "+ Cadastrar peça"** em Estoque de Peças abre formulário (nome, código, categoria, unidade de medida, quantidade inicial, estoque mínimo, localização armário/prateleira/caixa com prévia compacta, e custo unitário). "Salvar peça" aparece na listagem dentro da sessão, sem gravar em banco.

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Package, MapPin, AlertTriangle, Wrench } from "lucide-react";
 import { StatCard } from "@/components/home/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { PecaFormDialog } from "./peca-form-dialog";
+import { useEstoque } from "./estoque-provider";
 import {
-  ALMOXARIFADO,
   MANUTENCOES,
   UNIDADES_MEDIDA,
   statusEstoque,
@@ -21,12 +20,12 @@ function siglaUnidade(item: ItemAlmoxarifado): string {
 }
 
 /**
- * Estoque de Peças — estado local iniciado com o mock ALMOXARIFADO.
- * "Cadastrar peça" aparece na lista dentro da mesma sessão, sem gravar em
- * nenhum lugar (mesmo padrão de Manutenção/Combustível).
+ * Estoque de Peças — lê o EstoqueProvider (Context montado no layout do
+ * dashboard), para que uma peça cadastrada aqui apareça também no seletor
+ * "Estoque próprio" da Nova Manutenção, na mesma sessão.
  */
 export function EstoqueView() {
-  const [itens, setItens] = useState<ItemAlmoxarifado[]>(ALMOXARIFADO);
+  const { itens, cadastrarPeca } = useEstoque();
 
   const itensEmAlerta = itens.filter((i) => statusEstoque(i) !== "regular").length;
   const itensZerados = itens.filter((i) => statusEstoque(i) === "critico").length;
@@ -49,7 +48,7 @@ export function EstoqueView() {
             Peças da oficina própria, com localização física, custo e alerta antes de faltar.
           </p>
         </div>
-        <PecaFormDialog onCadastrar={(item) => setItens((atual) => [item, ...atual])} />
+        <PecaFormDialog onCadastrar={cadastrarPeca} />
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">

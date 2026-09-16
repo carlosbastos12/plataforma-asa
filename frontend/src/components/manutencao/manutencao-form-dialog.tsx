@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } f
 import {
   FROTA,
   TODAY,
-  ALMOXARIFADO,
   formatarMoeda,
   localizacaoCompacta,
   type Manutencao,
@@ -20,6 +19,7 @@ import {
   type OrigemServico,
   type TipoManutencao,
 } from "@/lib/mock-data";
+import { useEstoque } from "@/components/estoque/estoque-provider";
 import { cn } from "@/lib/utils";
 
 function hojeISO() {
@@ -35,6 +35,8 @@ function totalServicosLocal(servicos: ServicoManutencao[]): number {
 }
 
 export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manutencao) => void }) {
+  const { itens: itensEstoque } = useEstoque();
+
   const [aberto, setAberto] = useState(false);
   const [placa, setPlaca] = useState(FROTA[0].placa);
   const [data, setData] = useState(hojeISO());
@@ -48,7 +50,7 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
   // sub-formulário: peça
   const [formPecaAberto, setFormPecaAberto] = useState(false);
   const [origemPeca, setOrigemPeca] = useState<OrigemPeca>("estoque_proprio");
-  const [itemEstoqueId, setItemEstoqueId] = useState(ALMOXARIFADO[0].id);
+  const [itemEstoqueId, setItemEstoqueId] = useState(itensEstoque[0]?.id ?? "");
   const [qtdPeca, setQtdPeca] = useState("1");
   const [nomePecaCompra, setNomePecaCompra] = useState("");
   const [codigoPecaCompra, setCodigoPecaCompra] = useState("");
@@ -63,7 +65,21 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
   const [prestadorServico, setPrestadorServico] = useState("");
   const [valorServico, setValorServico] = useState("");
 
-  const itemSelecionado = ALMOXARIFADO.find((i) => i.id === itemEstoqueId) ?? ALMOXARIFADO[0];
+  const itemSelecionado =
+    itensEstoque.find((i) => i.id === itemEstoqueId) ??
+    itensEstoque[0] ?? {
+      id: "",
+      nome: "Nenhuma peça cadastrada",
+      categoria: "",
+      unidade: "unidade" as const,
+      quantidade: 0,
+      quantidadeMinima: 0,
+      valorUnitario: 0,
+      armario: "-",
+      prateleira: "-",
+      caixa: "-",
+      localizacaoDescricao: "",
+    };
   const qtdPecaNum = Number(qtdPeca) || 0;
 
   function adicionarPeca() {
@@ -270,7 +286,7 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
                     <Select value={itemEstoqueId} onValueChange={(v) => v && setItemEstoqueId(v)}>
                       <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {ALMOXARIFADO.map((i) => (
+                        {itensEstoque.map((i) => (
                           <SelectItem key={i.id} value={i.id}>
                             {i.nome} — {i.id} — {i.quantidade} un. disponíveis
                           </SelectItem>
