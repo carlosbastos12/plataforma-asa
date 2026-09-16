@@ -145,13 +145,31 @@ export function statusPreventiva(atualKm: number, p: ManutencaoPreventiva): DocS
 
 /* ---------------- Estoque de Peças (Almoxarifado da oficina própria) ---------------- */
 
+export type UnidadeMedida = "unidade" | "litro" | "jogo" | "caixa" | "outro";
+
+export const UNIDADES_MEDIDA: { valor: UnidadeMedida; label: string; sigla: string }[] = [
+  { valor: "unidade", label: "Unidade", sigla: "un." },
+  { valor: "litro", label: "Litro", sigla: "L" },
+  { valor: "jogo", label: "Jogo", sigla: "jogo(s)" },
+  { valor: "caixa", label: "Caixa", sigla: "cx." },
+  { valor: "outro", label: "Outro", sigla: "un." },
+];
+
 export interface ItemAlmoxarifado {
   /** Código do item, ex.: "FIL-001" — mesmo valor usado em PecaManutencao.codigo. */
   id: string;
   nome: string;
-  categoria: "Lubrificantes" | "Filtros" | "Freios" | "Pneus" | "Motor";
+  /** Texto livre — cadastrada pelo usuário, sem lista fechada. */
+  categoria: string;
+  unidade: UnidadeMedida;
   quantidade: number;
   quantidadeMinima: number;
+  /**
+   * Custo da peça para a ASA (não é preço de venda) — usado para calcular o
+   * consumo nas manutenções. Cada PecaManutencao guarda o valor no momento
+   * em que a peça foi usada, então mudar este campo aqui NUNCA reescreve o
+   * custo de uma manutenção já registrada (ver D-054).
+   */
   valorUnitario: number;
   armario: string;
   prateleira: string;
@@ -160,14 +178,14 @@ export interface ItemAlmoxarifado {
 }
 
 export const ALMOXARIFADO: ItemAlmoxarifado[] = [
-  { id: "LUB-001", nome: "Óleo motor 15W40 (20L)", categoria: "Lubrificantes", quantidade: 8, quantidadeMinima: 5, valorUnitario: 535, armario: "A1", prateleira: "P01", caixa: "C01", localizacaoDescricao: "Armário A1 — Lubrificantes" },
-  { id: "LUB-002", nome: "Graxa multiuso (bisnaga)", categoria: "Lubrificantes", quantidade: 12, quantidadeMinima: 4, valorUnitario: 24, armario: "A1", prateleira: "P02", caixa: "C03", localizacaoDescricao: "Armário A1 — Lubrificantes" },
-  { id: "FIL-001", nome: "Filtro de óleo", categoria: "Filtros", quantidade: 3, quantidadeMinima: 6, valorUnitario: 80, armario: "B2", prateleira: "P02", caixa: "C04", localizacaoDescricao: "Armário B2 — Filtros" },
-  { id: "FIL-002", nome: "Filtro de combustível", categoria: "Filtros", quantidade: 5, quantidadeMinima: 4, valorUnitario: 120, armario: "B2", prateleira: "P03", caixa: "C01", localizacaoDescricao: "Armário B2 — Filtros" },
-  { id: "FRE-001", nome: "Pastilha de freio dianteira (jogo)", categoria: "Freios", quantidade: 2, quantidadeMinima: 3, valorUnitario: 340, armario: "C3", prateleira: "P01", caixa: "C02", localizacaoDescricao: "Armário C3 — Freios" },
-  { id: "FRE-002", nome: "Disco de freio dianteiro", categoria: "Freios", quantidade: 0, quantidadeMinima: 2, valorUnitario: 390, armario: "C3", prateleira: "P02", caixa: "C01", localizacaoDescricao: "Armário C3 — Freios" },
-  { id: "PNE-001", nome: "Pneu 295/80 R22.5", categoria: "Pneus", quantidade: 4, quantidadeMinima: 4, valorUnitario: 1650, armario: "D1", prateleira: "-", caixa: "-", localizacaoDescricao: "Depósito externo — Pátio de pneus" },
-  { id: "MOT-001", nome: "Correia dentada", categoria: "Motor", quantidade: 6, quantidadeMinima: 2, valorUnitario: 165, armario: "B4", prateleira: "P01", caixa: "C02", localizacaoDescricao: "Armário B4 — Motor" },
+  { id: "LUB-001", nome: "Óleo motor 15W40 (20L)", categoria: "Lubrificantes", unidade: "unidade", quantidade: 8, quantidadeMinima: 5, valorUnitario: 535, armario: "A1", prateleira: "P01", caixa: "C01", localizacaoDescricao: "Armário A1 — Lubrificantes" },
+  { id: "LUB-002", nome: "Graxa multiuso (bisnaga)", categoria: "Lubrificantes", unidade: "unidade", quantidade: 12, quantidadeMinima: 4, valorUnitario: 24, armario: "A1", prateleira: "P02", caixa: "C03", localizacaoDescricao: "Armário A1 — Lubrificantes" },
+  { id: "FIL-001", nome: "Filtro de óleo", categoria: "Filtros", unidade: "unidade", quantidade: 3, quantidadeMinima: 6, valorUnitario: 80, armario: "B2", prateleira: "P02", caixa: "C04", localizacaoDescricao: "Armário B2 — Filtros" },
+  { id: "FIL-002", nome: "Filtro de combustível", categoria: "Filtros", unidade: "unidade", quantidade: 5, quantidadeMinima: 4, valorUnitario: 120, armario: "B2", prateleira: "P03", caixa: "C01", localizacaoDescricao: "Armário B2 — Filtros" },
+  { id: "FRE-001", nome: "Pastilha de freio dianteira (jogo)", categoria: "Freios", unidade: "jogo", quantidade: 2, quantidadeMinima: 3, valorUnitario: 340, armario: "C3", prateleira: "P01", caixa: "C02", localizacaoDescricao: "Armário C3 — Freios" },
+  { id: "FRE-002", nome: "Disco de freio dianteiro", categoria: "Freios", unidade: "unidade", quantidade: 0, quantidadeMinima: 2, valorUnitario: 390, armario: "C3", prateleira: "P02", caixa: "C01", localizacaoDescricao: "Armário C3 — Freios" },
+  { id: "PNE-001", nome: "Pneu 295/80 R22.5", categoria: "Pneus", unidade: "unidade", quantidade: 4, quantidadeMinima: 4, valorUnitario: 1650, armario: "D1", prateleira: "-", caixa: "-", localizacaoDescricao: "Depósito externo — Pátio de pneus" },
+  { id: "MOT-001", nome: "Correia dentada", categoria: "Motor", unidade: "unidade", quantidade: 6, quantidadeMinima: 2, valorUnitario: 165, armario: "B4", prateleira: "P01", caixa: "C02", localizacaoDescricao: "Armário B4 — Motor" },
 ];
 
 /** Mesmo semáforo de estoque usado no tanque de diesel (lib/combustivel.ts), aplicado a peças. */

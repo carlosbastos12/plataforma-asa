@@ -277,14 +277,32 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="flex items-center gap-2 rounded-lg bg-info-soft px-2.5 py-2 text-xs text-info">
-                      <Info className="size-3.5 shrink-0" strokeWidth={2.25} />
-                      Localização {localizacaoCompacta(itemSelecionado)} · estoque disponível {itemSelecionado.quantidade} un.
-                      {qtdPecaNum > 0 && ` → após utilização: ${Math.max(itemSelecionado.quantidade - qtdPecaNum, 0)} un. (conceitual)`}
+
+                    <div className="rounded-lg border border-border bg-card px-3 py-2.5 text-[13px]">
+                      <p className="font-medium text-foreground">
+                        {itemSelecionado.nome} <span className="font-normal text-muted-foreground">— {itemSelecionado.id}</span>
+                      </p>
+                      <div className="mt-1.5 flex flex-col gap-0.5 text-muted-foreground">
+                        <span>Estoque disponível: {itemSelecionado.quantidade} un.</span>
+                        <span>Localização: {localizacaoCompacta(itemSelecionado)}</span>
+                        <span>Custo unitário: {formatarMoeda(itemSelecionado.valorUnitario)}</span>
+                      </div>
                     </div>
+
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-medium text-muted-foreground">Quantidade utilizada</label>
                       <Input type="number" value={qtdPeca} onChange={(e) => setQtdPeca(e.target.value)} />
+                    </div>
+
+                    <div className="flex items-center gap-2 rounded-lg bg-info-soft px-2.5 py-2 text-xs text-info">
+                      <Info className="size-3.5 shrink-0" strokeWidth={2.25} />
+                      Estoque antes: {itemSelecionado.quantidade} un. · Utilização: {qtdPecaNum} un. · Estoque após:{" "}
+                      {Math.max(itemSelecionado.quantidade - qtdPecaNum, 0)} un. (conceitual)
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
+                      <span className="font-medium text-foreground">Total</span>
+                      <span className="font-semibold tabular-nums text-foreground">{formatarMoeda(qtdPecaNum * itemSelecionado.valorUnitario)}</span>
                     </div>
                   </>
                 ) : (
@@ -303,7 +321,7 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
                         <Input type="number" value={qtdPeca} onChange={(e) => setQtdPeca(e.target.value)} />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">Valor unitário</label>
+                        <label className="text-xs font-medium text-muted-foreground">Custo unitário</label>
                         <Input type="number" value={valorPecaCompra} onChange={(e) => setValorPecaCompra(e.target.value)} />
                       </div>
                       <div className="flex flex-col gap-1.5">
@@ -314,6 +332,13 @@ export function ManutencaoFormDialog({ onRegistrar }: { onRegistrar: (m: Manuten
                         <label className="text-xs font-medium text-muted-foreground">Observação (opcional)</label>
                         <Input value={obsPecaCompra} onChange={(e) => setObsPecaCompra(e.target.value)} />
                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
+                      <span className="font-medium text-foreground">Total</span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {formatarMoeda((Number(valorPecaCompra) || 0) * qtdPecaNum)}
+                      </span>
                     </div>
                   </>
                 )}

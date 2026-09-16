@@ -4,9 +4,11 @@
 
 ## Fase atual
 
-**Manutenção e Estoque de Peças viraram módulos independentes na sidebar (D-053), para a demonstração à Priscila.** Três setores agora: Gestão da Frota (Veículos/Documentação/Multas/Combustível), Manutenção (`/manutencao`, `/manutencao/manutencoes`) e Estoque de Peças (`/estoque-de-pecas`, `/estoque-de-pecas/movimentacoes`). Cada manutenção registra peças utilizadas (origem estoque próprio ou compra específica) e serviços realizados (própria — sem custo — ou terceirizada), com "+ Adicionar manutenção" interativo no mesmo padrão do Combustível. Manutenção preventiva por km (D-052) preservada sem alteração na Visão Geral da Frota. Tudo dado fictício, sem banco.
+**Estoque de Peças ganhou cadastro de peça, com custo unitário (D-054).** Botão "+ Cadastrar peça" em `/estoque-de-pecas` (nome, código, categoria, unidade, quantidade, mínimo, localização, custo unitário) — interativo, sem banco. O seletor de "Estoque próprio" na Nova Manutenção mostra custo unitário e estoque antes/após de forma conceitual; o custo é copiado para a manutenção no momento em que a peça é adicionada, nunca recalculado depois.
 
-**Anterior — Gestão da Frota ganhou manutenção preventiva por km, peças e Almoxarifado (D-052).** Base de dados e conceito criados nesta missão; reorganizados em módulos independentes na D-053 acima.
+**Anterior — Manutenção e Estoque de Peças viraram módulos independentes na sidebar (D-053).** Três setores: Gestão da Frota (Veículos/Documentação/Multas/Combustível), Manutenção (`/manutencao`, `/manutencao/manutencoes`) e Estoque de Peças (`/estoque-de-pecas`, `/estoque-de-pecas/movimentacoes`). Cada manutenção registra peças utilizadas e serviços realizados (própria — sem custo — ou terceirizada), com "+ Adicionar manutenção" interativo no mesmo padrão do Combustível. Manutenção preventiva por km (D-052) preservada sem alteração na Visão Geral da Frota.
+
+**Anterior — Gestão da Frota ganhou manutenção preventiva por km, peças e Almoxarifado (D-052).** Base de dados e conceito criados nesta missão; reorganizados em módulos independentes na D-053.
 
 **Anterior — Importador AutEM funcionando com a planilha real (D-051).** Os 48 lançamentos do arquivo verdadeiro são lidos sem nenhum problema. Centro de Custo vira Grupo e Categoria vira Classificação quando há correspondência segura no cadastro; o que não tem fica em branco e a prévia avisa. `PIX` deixa o banco em branco, a conta da Caixa da empresa é reconhecida, valores negativos viram positivos e nenhuma despesa some por duplicidade. **Migration `0005` já aplicada** — o importador está liberado.
 

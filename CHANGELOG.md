@@ -4,6 +4,14 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Cadastro de peça no Estoque, com custo unitário (2026-09-16)
+Pequena evolução do Estoque de Peças e da Nova Manutenção (D-054), continuando 100% mock:
+- **Botão "+ Cadastrar peça"** em Estoque de Peças abre formulário (nome, código, categoria, unidade de medida, quantidade inicial, estoque mínimo, localização armário/prateleira/caixa com prévia compacta, e custo unitário). "Salvar peça" aparece na listagem dentro da sessão, sem gravar em banco.
+- **Seletor de peça do estoque na Nova Manutenção** agora mostra nome, código, estoque disponível, localização e custo unitário antes de adicionar, e depois de informar a quantidade mostra estoque antes/utilização/estoque após (conceitual) e o total já calculado.
+- **Custo "congelado" por manutenção:** o custo unitário é copiado para dentro da manutenção só no momento em que a peça é adicionada — mudar o custo da peça no estoque depois não altera manutenções já registradas.
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` limpos; telas conferidas com o servidor local rodando sem exigência de sessão (mesma técnica das missões anteriores, `.env.local` restaurado logo em seguida).
+- Nenhuma mudança em Financeiro, banco, autenticação, Combustível, Documentação, Multas ou manutenção preventiva por km.
+
 ### Adicionado — Manutenção e Estoque de Peças como módulos independentes (2026-09-15)
 Reorganização da navegação para a demonstração à Priscila (D-053): "Manutenção" e "Estoque de Peças" saem de dentro de Gestão da Frota e ganham setor próprio na sidebar. Continua 100% dado fictício, sem banco:
 - **Sidebar:** Gestão da Frota (Visão geral/Veículos/Documentação/Multas/Combustível), Manutenção (Visão geral/Manutenções) e Estoque de Peças (Estoque/Movimentações) — três setores independentes.
