@@ -4,7 +4,9 @@
 
 ## Fase atual
 
-**Gestão da Frota ganhou manutenção preventiva por km, peças e Almoxarifado (D-052), para a demonstração à Priscila.** Semáforo de manutenção preventiva por quilometragem (troca de óleo) no dashboard e no detalhe de cada veículo; peças utilizadas por serviço com origem própria/terceirizada; nova tela `/gestao-da-frota/almoxarifado` com estoque fictício, localização física e peças usadas recentemente. Tudo dado fictício, sem banco — mesmo regime de demonstração do resto da Frota.
+**Manutenção e Estoque de Peças viraram módulos independentes na sidebar (D-053), para a demonstração à Priscila.** Três setores agora: Gestão da Frota (Veículos/Documentação/Multas/Combustível), Manutenção (`/manutencao`, `/manutencao/manutencoes`) e Estoque de Peças (`/estoque-de-pecas`, `/estoque-de-pecas/movimentacoes`). Cada manutenção registra peças utilizadas (origem estoque próprio ou compra específica) e serviços realizados (própria — sem custo — ou terceirizada), com "+ Adicionar manutenção" interativo no mesmo padrão do Combustível. Manutenção preventiva por km (D-052) preservada sem alteração na Visão Geral da Frota. Tudo dado fictício, sem banco.
+
+**Anterior — Gestão da Frota ganhou manutenção preventiva por km, peças e Almoxarifado (D-052).** Base de dados e conceito criados nesta missão; reorganizados em módulos independentes na D-053 acima.
 
 **Anterior — Importador AutEM funcionando com a planilha real (D-051).** Os 48 lançamentos do arquivo verdadeiro são lidos sem nenhum problema. Centro de Custo vira Grupo e Categoria vira Classificação quando há correspondência segura no cadastro; o que não tem fica em branco e a prévia avisa. `PIX` deixa o banco em branco, a conta da Caixa da empresa é reconhecida, valores negativos viram positivos e nenhuma despesa some por duplicidade. **Migration `0005` já aplicada** — o importador está liberado.
 
@@ -32,7 +34,9 @@
 | Organização por setor (Gestão da Frota / Fechamento) | ✅ Nova arquitetura de navegação (D-014); setor Acionamento removido por completo na P040 (D-040) |
 | **Sub-navegação por abas** dentro de Gestão da Frota e Fechamento | ✅ Corrige regressão de cliques introduzida pelo hub-only da Missão 02 (D-019) |
 | Central de Operações (home) | ✅ Dashboard executivo (clone visual do Protótipo 1 — D-035), com painel de Combustível (D-039) |
-| **Gestão da Frota** | ✅ Veículos, Documentação, Multas e **Combustível** (ciclo completo: entrada, abastecimento base/externo, estoque reativo, inteligência — P036/D-036) reais; **manutenção preventiva por km, peças e Almoxarifado** (D-052) novos; Vistorias segue como conceito futuro sinalizado |
+| **Gestão da Frota** | ✅ Veículos, Documentação, Multas e **Combustível** (ciclo completo: entrada, abastecimento base/externo, estoque reativo, inteligência — P036/D-036) reais; manutenção preventiva por km (D-052) na Visão Geral; Vistorias segue como conceito futuro sinalizado |
+| **Manutenção** (`/manutencao`) | ✅ Novo setor independente (D-053): peças utilizadas (estoque próprio/compra específica) e serviços realizados (própria/terceirizada) por manutenção, "+ Adicionar manutenção" interativo, visão geral com indicadores |
+| **Estoque de Peças** (`/estoque-de-pecas`) | ✅ Novo setor independente (D-053, ex-Almoxarifado): código por peça, localização física estruturada, aba Movimentações fictícia |
 | **Fechamento** | ✅ Caixa Particular real; Conferência/Consolidação/Seguradoras como conceito visual, sem regra de negócio inventada (D-015) |
 | **Equipe Operacional** | ✅ Módulo completo (P037/D-037): dashboard de 8 indicadores, 4 ações (colaborador/atestado/falta/férias), escala por equipe/turno, ficha do colaborador, calendário mensal, inteligência/alertas |
 | **Voz do Cliente** (`docs/BUSINESS/VOZ_DO_CLIENTE.md`) | ✅ Novo nesta missão — fonte oficial de requisitos reais, nunca exposta na interface (D-031) |
@@ -57,7 +61,7 @@
 - ❌ Geração automática das ocorrências de contas recorrentes — o cadastro já guarda tipo, periodicidade e nº de ocorrências.
 - ❌ Cofre de Credenciais e um Dashboard/Relatórios dedicado — a Central de Operações cumpre esse papel por ora.
 - ❌ Regras de negócio do processo de Fechamento (conferência, consolidação, seguradoras) — ainda não conhecidas; apenas conceito visual (D-015).
-- ❌ Vistorias como tela real — hoje é cartão sinalizando escopo futuro dentro de Gestão da Frota. "Compras da frota" virou a tela Almoxarifado (D-052), com dado fictício, mas sem baixa automática de estoque por manutenção — isso segue como conceito futuro sinalizado na própria tela.
+- ❌ Vistorias como tela real — hoje é cartão sinalizando escopo futuro dentro de Gestão da Frota. Estoque de Peças (D-053, ex-Almoxarifado D-052) tem dado fictício, mas sem baixa automática de estoque por manutenção registrada — isso segue como conceito futuro sinalizado na própria tela.
 - ❌ Rastreabilidade de alterações (quem mudou o quê e quando) — exige backend real; pendência registrada em D-031.
 - ❌ Conteúdo em `docs/`, `pesquisas/`, `referencias/`, `scripts/` — aguardando necessidade real.
 

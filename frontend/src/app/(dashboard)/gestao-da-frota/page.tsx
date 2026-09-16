@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { Truck, FileCheck2, ShieldAlert, Fuel, ClipboardCheck, Package, CircleAlert, Wrench } from "lucide-react";
 import { SectorLinkCard } from "@/components/shell/sector-link-card";
 import { StatCard } from "@/components/home/stat-card";
-import { FROTA, ALMOXARIFADO, situacaoVeiculo, statusVencimento, statusPreventiva, statusEstoque } from "@/lib/mock-data";
+import { FROTA, ALMOXARIFADO, MANUTENCOES, situacaoVeiculo, statusVencimento, statusPreventiva, statusEstoque } from "@/lib/mock-data";
 import { diasDeAutonomiaTanque } from "@/lib/combustivel";
 import { PreventivaCard } from "@/components/frota/preventiva-card";
 
@@ -13,6 +14,7 @@ export default function GestaoDaFrotaPage() {
   const frotaApta = FROTA.filter((v) => situacaoVeiculo(v) !== "critico").length;
   const autonomia = diasDeAutonomiaTanque();
   const itensEmAlertaEstoque = ALMOXARIFADO.filter((i) => statusEstoque(i) !== "regular").length;
+  const manutencoesPendentes = MANUTENCOES.filter((m) => m.status === "em_andamento").length;
 
   // Manutenção preventiva por km (conceito de demonstração — ver preventiva-card.tsx).
   const preventivasComStatus = FROTA.flatMap((v) =>
@@ -78,19 +80,31 @@ export default function GestaoDaFrotaPage() {
           disabled
         />
         <SectorLinkCard
-          href="/gestao-da-frota/almoxarifado"
+          href="/manutencao"
+          icon={Wrench}
+          title="Manutenção"
+          description="Serviços realizados, peças usadas e custo de cada manutenção."
+          badge={manutencoesPendentes > 0 ? `${manutencoesPendentes} em andamento` : `${MANUTENCOES.length} registro(s)`}
+        />
+        <SectorLinkCard
+          href="/estoque-de-pecas"
           icon={Package}
-          title="Almoxarifado"
-          description="Estoque de peças da oficina própria, com localização."
+          title="Estoque de Peças"
+          description="Estoque da oficina própria, com localização física."
           badge={itensEmAlertaEstoque > 0 ? `${itensEmAlertaEstoque} item(ns) em alerta` : "estoque em dia"}
         />
       </div>
 
       {preventivasEmAlerta.length > 0 && (
         <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Wrench className="size-4 text-muted-foreground" strokeWidth={2.25} />
-            <h3 className="text-sm font-semibold text-foreground">Manutenção preventiva por quilometragem</h3>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Wrench className="size-4 text-muted-foreground" strokeWidth={2.25} />
+              <h3 className="text-sm font-semibold text-foreground">Manutenção preventiva por quilometragem</h3>
+            </div>
+            <Link href="/manutencao" className="text-xs font-medium text-primary">
+              Ver módulo de Manutenção →
+            </Link>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {preventivasEmAlerta.map((p) => (

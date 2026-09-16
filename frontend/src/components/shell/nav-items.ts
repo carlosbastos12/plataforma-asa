@@ -1,4 +1,4 @@
-import { LayoutGrid, Truck, Landmark, FolderOpen, FileText, Settings, Users2, Wallet2 } from "lucide-react";
+import { LayoutGrid, Truck, Landmark, FolderOpen, FileText, Settings, Users2, Wallet2, Wrench, Warehouse } from "lucide-react";
 
 export interface NavChild {
   href: string;
@@ -42,6 +42,26 @@ export const NAV_ITEMS: NavItem[] = [
       { href: "/gestao-da-frota/multas", label: "Multas" },
       { href: "/gestao-da-frota/combustivel", label: "Combustível" },
     ],
+  },
+  {
+    href: "/manutencao",
+    label: "Manutenção",
+    icon: Wrench,
+    description: "Serviços realizados, peças usadas e custo por manutenção",
+    pergunta: "O que foi feito em cada caminhão, e quanto custou?",
+    beneficio: "Peças e serviços de cada manutenção num só lugar — própria ou terceirizada, com o total já calculado.",
+    accent: "info",
+    children: [{ href: "/manutencao/manutencoes", label: "Manutenções" }],
+  },
+  {
+    href: "/estoque-de-pecas",
+    label: "Estoque de Peças",
+    icon: Warehouse,
+    description: "Peças da oficina própria, com localização física",
+    pergunta: "Quais peças tenho disponíveis, e onde estão?",
+    beneficio: "Estoque baixo avisa antes de faltar peça na hora da manutenção.",
+    accent: "info",
+    children: [{ href: "/estoque-de-pecas/movimentacoes", label: "Movimentações" }],
   },
   {
     href: "/fechamento",

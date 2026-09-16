@@ -13,10 +13,13 @@ import {
   diasRestantes,
   formatarData,
   formatarMoeda,
+  manutencoesPorPlaca,
 } from "@/lib/mock-data";
 import { abastecimentosPorPlaca } from "@/lib/combustivel";
 import { VehicleTimeline } from "@/components/frota/vehicle-timeline";
 import { PreventivaCard } from "@/components/frota/preventiva-card";
+import { ManutencaoDetalhe } from "@/components/manutencao/manutencao-detalhe";
+import { TipoManutencaoBadge, StatusManutencaoBadge } from "@/components/manutencao/badges";
 import { cn } from "@/lib/utils";
 
 export function generateStaticParams() {
@@ -37,6 +40,7 @@ export default async function VeiculoDetalhePage({
   const critico = veredicto.nivel === "critico";
   const atencao = veredicto.nivel === "atencao";
   const abastecimentos = abastecimentosPorPlaca(veiculo.placa);
+  const historicoManutencoes = manutencoesPorPlaca(veiculo.placa);
 
   return (
     <div className="flex flex-col gap-6">
@@ -206,52 +210,32 @@ export default async function VeiculoDetalhePage({
               </p>
             </div>
           )}
-          {veiculo.manutencoes.length === 0 ? (
+          {historicoManutencoes.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
               Nenhuma manutenção registrada para este veículo.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              <ul className="divide-y divide-border">
-                {veiculo.manutencoes.map((m, i) => (
-                  <li key={i} className="flex flex-col gap-3 px-5 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                        <Wrench className="size-4" strokeWidth={2.25} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          <p className="text-sm font-medium text-foreground">{m.servico}</p>
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                              m.origem === "propria" ? "bg-success-soft text-success" : "bg-secondary text-secondary-foreground"
-                            )}
-                          >
-                            {m.origem === "propria" ? "Oficina própria" : "Terceirizada"}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-[13px] text-muted-foreground">
-                          {formatarData(m.data)} · {m.km.toLocaleString("pt-BR")} km · {m.oficina}
-                        </p>
-                      </div>
-                      <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{formatarMoeda(m.valor)}</p>
+            <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+              {historicoManutencoes.map((m) => (
+                <div key={m.id} className="flex flex-col gap-4 p-5">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <Wrench className="size-4" strokeWidth={2.25} />
                     </div>
-                    {m.pecas.length > 0 && (
-                      <ul className="ml-[52px] flex flex-col gap-1 border-l border-border pl-4">
-                        {m.pecas.map((p, j) => (
-                          <li key={j} className="flex items-center justify-between text-[13px] text-muted-foreground">
-                            <span>
-                              {p.qtd}x {p.nome}
-                            </span>
-                            <span className="tabular-nums">{formatarMoeda(p.valor)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="text-sm font-medium text-foreground">{m.descricao}</p>
+                        <TipoManutencaoBadge tipo={m.tipo} />
+                        <StatusManutencaoBadge status={m.status} />
+                      </div>
+                      <p className="mt-0.5 text-[13px] text-muted-foreground">
+                        {formatarData(m.data)} · {m.km.toLocaleString("pt-BR")} km
+                      </p>
+                    </div>
+                  </div>
+                  <ManutencaoDetalhe manutencao={m} />
+                </div>
+              ))}
             </div>
           )}
         </TabsContent>

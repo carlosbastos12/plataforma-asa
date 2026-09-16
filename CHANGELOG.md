@@ -4,6 +4,17 @@ Formato baseado em *Keep a Changelog*. Datas em AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Adicionado — Manutenção e Estoque de Peças como módulos independentes (2026-09-15)
+Reorganização da navegação para a demonstração à Priscila (D-053): "Manutenção" e "Estoque de Peças" saem de dentro de Gestão da Frota e ganham setor próprio na sidebar. Continua 100% dado fictício, sem banco:
+- **Sidebar:** Gestão da Frota (Visão geral/Veículos/Documentação/Multas/Combustível), Manutenção (Visão geral/Manutenções) e Estoque de Peças (Estoque/Movimentações) — três setores independentes.
+- **Manutenção vira registro com peças + serviços**, não mais um único campo "serviço/valor": cada manutenção tem tipo (preventiva/corretiva), status (concluída/em andamento), lista de **peças utilizadas** (com origem *estoque próprio* ou *compra para esta manutenção*) e lista de **serviços realizados** (origem *própria* — sempre R$ 0,00, a ASA tem equipe mecânica própria — ou *terceirizada*, com valor). O total soma peças + serviços terceirizados.
+- **Nova tela `/manutencao/manutencoes`** lista todas as manutenções da frota, com botão "+ Adicionar manutenção" interativo (mesmo padrão já usado em Combustível — estado local, sem gravar em banco) e detalhe completo por manutenção.
+- **Nova tela `/manutencao`** (visão geral): manutenções registradas, preventivas × corretivas, veículos com manutenção pendente, gasto com peças, gasto com serviços terceirizados.
+- **Almoxarifado virou `/estoque-de-pecas`**: código por peça, localização física estruturada (armário/prateleira/caixa, com forma compacta "B2 / P02 / C04") e nova aba **Movimentações** (entrada/saída/ajuste, fictício).
+- **Preservado sem alteração:** manutenção preventiva por quilometragem (D-052) — segue na Visão Geral de Gestão da Frota, mostrando vencidas/próximas/em dia.
+- Nenhuma mudança em Financeiro, banco, autenticação, Combustível ou na regra de "frota apta a operar".
+- Verificação: `eslint`, `tsc --noEmit`, `npm run build` (41 páginas) limpos; páginas novas conferidas com o servidor local rodando sem exigência de login (Supabase local temporariamente sem configuração, restaurado após o teste) — sem framework de testes automatizados configurado no projeto.
+
 ### Adicionado — Manutenção preventiva por km, peças e Almoxarifado na Gestão da Frota (2026-09-15)
 Preparação da demonstração para a Priscila (D-052), a partir do que o Vitor confirmou que ela quer acompanhar: serviços por caminhão, peças utilizadas, gastos de manutenção e a oficina/almoxarifado própria da ASA. Segue 100% no regime de demonstração — dado fictício, sem banco, sem backend:
 - **Semáforo de manutenção preventiva por quilometragem** (troca de óleo): compara última troca + intervalo com o km atual do veículo, reaproveitando o mesmo `DocStatus` de documentos/multas. Aparece no dashboard da Frota (com lista dos veículos vencidos/próximos) e na aba "Manutenções" de cada veículo. Textos nas próprias telas deixam claro que é conceito de demonstração — a atualização automática de km por abastecimento é conceito futuro, não implementado.

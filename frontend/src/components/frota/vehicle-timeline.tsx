@@ -1,5 +1,5 @@
 import { FileCheck2, ShieldAlert, Wrench, Fuel } from "lucide-react";
-import { formatarData, formatarMoeda, type Veiculo } from "@/lib/mock-data";
+import { formatarData, formatarMoeda, manutencoesPorPlaca, totalManutencao, type Veiculo } from "@/lib/mock-data";
 import { abastecimentosPorPlaca } from "@/lib/combustivel";
 import { cn } from "@/lib/utils";
 
@@ -33,10 +33,10 @@ export function VehicleTimeline({ veiculo }: { veiculo: Veiculo }) {
       tom: m.status === "paga" ? ("regular" as const) : ("critico" as const),
       icone: ShieldAlert,
     })),
-    ...veiculo.manutencoes.map((m) => ({
+    ...manutencoesPorPlaca(veiculo.placa).map((m) => ({
       data: m.data,
-      titulo: m.servico,
-      descricao: `${m.oficina} · ${formatarMoeda(m.valor)} · ${m.km.toLocaleString("pt-BR")} km`,
+      titulo: m.descricao,
+      descricao: `${m.tipo === "preventiva" ? "Preventiva" : "Corretiva"} · ${formatarMoeda(totalManutencao(m))} · ${m.km.toLocaleString("pt-BR")} km`,
       tom: "neutro" as const,
       icone: Wrench,
     })),
